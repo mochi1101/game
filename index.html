@@ -889,6 +889,7 @@
 
         window.onload = function() {
             loadSavedData();
+            syncSharedRaidHpAndRender();
             checkDailyReset();
             updateDailyMissionAlert();
             document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
@@ -970,7 +971,10 @@
             const navBtn = document.getElementById(`nav-${tabId}`);
             if(navBtn) navBtn.classList.add('text-amber-400', 'active-tab');
 
-            if(tabId === 'home') updateHomeDisplay();
+            if(tabId === 'home') {
+                updateHomeDisplay();
+                syncSharedRaidHpAndRender();
+            }
             if(tabId === 'quest') renderQuests();
             if(tabId === 'party') renderPartyUI();
             if(tabId === 'tower') renderTowerUI();
@@ -1658,11 +1662,112 @@
             showCustomModal('報酬獲得', 'デイリーミッション報酬 20クリスタルを獲得しました！');
         }
 
+
+        // ===== 共有レイドHP（Workerを正とする） =====
+        // 既に作成したWorkerのURLをここに設定してください。
+        // もし既存のWorker URLがHTML内に設定済みなら、その値をそのまま使用します。
+        const RAID_API_URL = window.RAID_API_URL || 'https://arcana-raid.katagiri18760706.workers.dev';
+
+        let raidHpSyncInFlight = false;
+
+        async function fetchSharedRaidHp() {
+            if (!RAID_API_URL) return null;
+            try {
+                const res = await fetch(`${RAID_API_URL.replace(/\/$/, '')}/raid`, {
+                    method: 'GET',
+                    cache: 'no-store'
+                });
+                if (!res.ok) throw new Error(`raid GET ${res.status}`);
+                const data = await res.json();
+                const hp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(data.hp ?? data.raidBossHp)));
+                if (!Number.isFinite(hp)) throw new Error('invalid raid hp');
+
+                raidBossHp = hp;
+                playerData.raidBossHp = hp;
+                saveData();
+                updateRaidBannerUI();
+                return hp;
+            } catch (e) {
+                console.warn('共有レイドHP取得失敗:', e);
+                return null;
+            }
+        }
+
+        async function submitSharedRaidDamage(damage) {
+            const dmg = Math.max(0, Math.floor(Number(damage) || 0));
+            if (dmg <= 0) return null;
+
+            if (!RAID_API_URL) {
+                // Worker URL未設定時のみ従来のローカル保存にフォールバック
+                raidBossHp = Math.max(0, raidBossHp - dmg);
+                playerData.raidBossHp = raidBossHp;
+                playerData.raidDamage = (Number(playerData.raidDamage) || 0) + dmg;
+                saveData();
+                updateRaidBannerUI();
+                return raidBossHp;
+            }
+
+            try {
+                const res = await fetch(`${RAID_API_URL.replace(/\/$/, '')}/raid/damage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    cache: 'no-store',
+                    body: JSON.stringify({ damage: dmg })
+                });
+                if (!res.ok) throw new Error(`raid damage POST ${res.status}`);
+                const data = await res.json();
+                const hp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(data.hp ?? data.raidBossHp)));
+                if (!Number.isFinite(hp)) throw new Error('invalid raid hp');
+
+                raidBossHp = hp;
+                playerData.raidBossHp = hp;
+                playerData.raidDamage = (Number(playerData.raidDamage) || 0) + dmg;
+                saveData();
+                updateRaidBannerUI();
+                return hp;
+            } catch (e) {
+                console.warn('共有レイドHP更新失敗:', e);
+                // 送信失敗時はローカルHPを勝手に確定扱いしない
+                await fetchSharedRaidHp();
+                return null;
+            }
+        }
+
+        async function syncSharedRaidHpAndRender() {
+            if (raidHpSyncInFlight) return;
+            raidHpSyncInFlight = true;
+            try {
+                await fetchSharedRaidHp();
+            } finally {
+                raidHpSyncInFlight = false;
+            }
+        }
+
+        function getCurrentRaidDamage() {
+            if (!currentBattle || !currentBattle.quest?.isRaid) return 0;
+            const startHp = Math.max(0, Number(currentBattle.quest.raidStartHp) || 0);
+            const enemyHp = Math.max(0, Number(currentBattle.enemies?.[0]?.hp) || 0);
+            return Math.max(0, Math.min(startHp, startHp - enemyHp));
+        }
+
+        async function finalizeRaidDamage() {
+            if (!currentBattle || !currentBattle.quest?.isRaid) return;
+            if (currentBattle.raidDamageApplied) return;
+
+            const damage = getCurrentRaidDamage();
+            currentBattle.raidDamageApplied = true;
+
+            if (damage > 0) {
+                await submitSharedRaidDamage(damage);
+            } else {
+                await fetchSharedRaidHp();
+            }
+        }
+
         function updateRaidBannerUI() {
             const bar = document.getElementById('raid-boss-hp-bar');
             const txt = document.getElementById('raid-boss-hp-text');
             if (bar && txt) {
-                // レイドHPはplayerDataを唯一の保存元にする
                 raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(playerData.raidBossHp ?? RAID_BOSS_MAX_HP)));
                 playerData.raidBossHp = raidBossHp;
                 const pct = Math.max(0, (raidBossHp / RAID_BOSS_MAX_HP) * 100);
@@ -1671,10 +1776,11 @@
             }
         }
 
-        function openRaidModal() {
+        async function openRaidModal() {
+            await syncSharedRaidHpAndRender();
             updateRaidBannerUI();
             document.getElementById('raid-my-damage').innerText = playerData.raidDamage.toLocaleString();
-            document.getElementById('raid-tickets').innerText = `${playerData.raidTickets} / 3`;
+            document.getElementById('raid-tickets').innerText = '無制限';
             const modal = document.getElementById('raid-modal');
             modal.classList.remove('hidden'); modal.classList.add('flex');
         }
@@ -1683,22 +1789,23 @@
             document.getElementById('raid-modal').classList.remove('flex');
         }
 
-        function startRaidBattle() {
-            if (playerData.raidTickets <= 0) {
-                showCustomModal('挑戦権不足', '本日のレイド戦参加回数がありません。明日また挑戦してください！');
-                return;
-            }
+        async function startRaidBattle() {
+            // レイド挑戦回数は無制限。テスト・本番とも回数による開始制限を行わない。
             const activeParty = playerData.party.filter(id => id !== null);
             if (activeParty.length === 0) { showCustomModal('エラー', '出撃パーティを編成してください。'); return; }
 
-            // 保存済みの全体HPを必ず読み直してから戦闘開始
-            raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(playerData.raidBossHp ?? RAID_BOSS_MAX_HP)));
+            // 戦闘開始直前にWorkerから最新の全体HPを取得する
+            const sharedHp = await fetchSharedRaidHp();
+            raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP,
+                Number(sharedHp ?? playerData.raidBossHp ?? RAID_BOSS_MAX_HP)
+            ));
+            playerData.raidBossHp = raidBossHp;
             if (raidBossHp <= 0) {
                 showCustomModal('レイド討伐完了', '終焉巨神ベヒモスはすでに討伐されています！');
                 return;
             }
 
-            playerData.raidTickets -= 1;
+            // 挑戦回数は無制限のため、raidTickets は消費しない。
             playerData.raidBossHp = raidBossHp;
             saveData();
             closeRaidModal();
@@ -1726,6 +1833,7 @@
 
             currentBattle = {
                 quest: quest, currentWaveIdx: 0, totalWaves: quest.waves.length, enemies: [],
+                raidDamageApplied: false,
                 party: activeParty.map(id => {
                     const m = MASTER_UNITS[id];
                     const inv = playerData.inventory[id];
@@ -2126,8 +2234,22 @@
                     // 味方全滅判定
                     if (currentBattle.party.every(u => u.hp <= 0)) {
                         currentBattle.inProgress = false;
-                        showCustomModal('敗北...', 'パーティが全滅しました。強化を行って再挑戦しましょう！');
-                        switchTab('quest');
+
+                        // レイドは全滅・敗北でも、ここまでに与えたダメージを
+                        // 共通レイドHPへ確定反映してからホームへ戻す
+                        if (currentBattle.quest?.isRaid) {
+                            finalizeRaidDamage().then(async () => {
+                                await syncSharedRaidHpAndRender();
+                                showCustomModal(
+                                    '敗北...',
+                                    `パーティが全滅しました。\n今回のダメージ: ${getCurrentRaidDamage().toLocaleString()}\n与えたダメージは全プレイヤー共通のレイドHPに反映されました。`
+                                );
+                                switchTab('home');
+                            });
+                        } else {
+                            showCustomModal('敗北...', 'パーティが全滅しました。強化を行って再挑戦しましょう！');
+                            switchTab('quest');
+                        }
                         return;
                     }
 
@@ -2138,7 +2260,7 @@
             }, delay);
         }
 
-        function handleEnemyKilled() {
+        async function handleEnemyKilled() {
             if (!currentBattle || !currentBattle.inProgress) return;
 
             if (currentBattle.currentWaveIdx + 1 < currentBattle.totalWaves) {
@@ -2148,35 +2270,11 @@
                 
                 // レイドの場合の処理
                 if (currentBattle.quest.isRaid) {
-                    // 1戦のダメージ上限は設けない。
-                    // 戦闘開始時のベヒモスHPを削り切った場合は、その全量をレイドダメージとして反映する。
-                    const totalDmg = Math.max(0, Number(currentBattle.quest.raidStartHp ?? 0));
-                    playerData.raidDamage += totalDmg;
-                    raidBossHp = Math.max(0, raidBossHp - totalDmg);
-                    playerData.raidBossHp = raidBossHp;
-                    // HPを減らした直後に保存する（ホームへ戻る前に永続化）
-                    saveData();
-                    updateRaidBannerUI();
-                    showCustomModal('レイド戦完了！', `終焉巨神ベヒモスに 【${totalDmg.toLocaleString()}】 ダメージを与えました！\n残りHP：${raidBossHp.toLocaleString()} / ${RAID_BOSS_MAX_HP.toLocaleString()}\n累計ダメージ報酬として 500 ジュエルを獲得！`);
-                    playerData.gems += 500;
-                    addPlayerExp(currentBattle.quest.rewardExp);
-                    saveData();
-                    updateHeaderUI();
+                    // 戦闘で実際に削ったHPだけをWorkerへ反映
+                    await finalizeRaidDamage();
+                    showCustomModal('RAID VICTORY!', `終焉巨神ベヒモスを撃破しました！\n今回のダメージ: ${getCurrentRaidDamage().toLocaleString()}\n全プレイヤー共通のレイドHPに反映しました。`);
                     switchTab('home');
                     return;
-                }
-
-                // 通常クエスト / タワーのクリア処理
-                const q = currentBattle.quest;
-                if (q.id === 999) { // タワークリア
-                    if (!playerData.clearedTowerFloors.includes(playerData.towerFloor)) {
-                        playerData.clearedTowerFloors.push(playerData.towerFloor);
-                        playerData.gems += q.rewardGems;
-                    }
-                    playerData.towerFloor += 1;
-                    addPlayerExp(q.rewardExp);
-                    showCustomModal('階層突破！', `試練のバベルタワー第 ${playerData.towerFloor - 1} 階層をクリアしました！\n報酬: ${q.rewardGems} ジュエル獲得！`);
-                    switchTab('tower');
                 } else {
                     if (!playerData.clearedQuests.includes(q.id)) {
                         playerData.clearedQuests.push(q.id);
@@ -2191,9 +2289,15 @@
         }
 
         function retreatBattle() {
-            showConfirmModal('撤退の確認', 'バトルから撤退しますか？（消費したAPは戻りません）', () => {
-                if (currentBattle) currentBattle.inProgress = false;
-                switchTab('quest');
+            showConfirmModal('撤退の確認', 'バトルから撤退しますか？（消費したAPは戻りません）', async () => {
+                if (currentBattle) {
+                    currentBattle.inProgress = false;
+                    if (currentBattle.quest?.isRaid) {
+                        await finalizeRaidDamage();
+                    }
+                }
+                await syncSharedRaidHpAndRender();
+                switchTab('home');
             });
         }
     </script>
