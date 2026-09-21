@@ -258,29 +258,11 @@
         <main id="main-content" class="relative flex-1 overflow-hidden bg-slate-950 flex flex-col min-h-0">
 
             <!-- TITLE SCREEN -->
-            <section id="screen-title" class="view-screen absolute inset-0 z-40 flex flex-col items-center justify-between p-6 bg-cover bg-center" style="background-image: linear-gradient(to bottom, rgba(9, 10, 15, 0.4), rgba(9, 10, 15, 0.95)), url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1400&q=80');">
-                <div class="w-full flex justify-end pt-2">
-                    <button onclick="toggleAudio()" class="bg-slate-900/80 border border-amber-500/40 rounded-full px-3 py-1 flex items-center space-x-2 text-xs text-amber-300 backdrop-blur shadow-lg">
-                        <i class="fa-solid fa-volume-high text-xs"></i>
-                        <span>BGM / SE</span>
+            <section id="screen-title" onclick="handleTitleTap()" class="view-screen absolute inset-0 z-40 flex flex-col items-center justify-end p-6 bg-cover bg-center cursor-pointer" style="background-image: linear-gradient(to bottom, rgba(9, 10, 15, 0.00), rgba(9, 10, 15, 0.34)), url('Designer2.png');">
+                <div class="w-full flex justify-center pb-8">
+                    <button onclick="event.stopPropagation(); handleTitleTap()" class="animate-tap-start text-lg sm:text-2xl font-black text-gold font-cinzel tracking-widest drop-shadow-[0_0_15px_rgba(252,224,85,0.8)] cursor-pointer">
+                        TAP TO START
                     </button>
-                </div>
-
-                <div class="flex flex-col items-center text-center space-y-3 my-auto">
-                    <div class="text-xs font-black text-amber-400 uppercase tracking-widest bg-amber-950/60 border border-amber-500/40 rounded-full px-4 py-1 backdrop-blur shadow-lg">
-                        DARK FANTASY TACTICAL RPG
-                    </div>
-                    <h1 class="text-4xl sm:text-6xl md:text-7xl font-black text-gold font-cinzel tracking-wider drop-shadow-[0_10px_25px_rgba(234,179,8,0.5)]">
-                        ARCANA CONNECT
-                    </h1>
-                    <p class="text-slate-300 text-xs sm:text-sm font-extrabold tracking-widest drop-shadow">アルカナ・コネクト</p>
-                </div>
-
-                <div class="w-full flex flex-col items-center space-y-4 pb-8">
-                    <button onclick="handleTitleTap()" class="animate-tap-start text-lg sm:text-2xl font-black text-gold font-cinzel tracking-widest drop-shadow-[0_0_15px_rgba(252,224,85,0.8)] cursor-pointer">
-                        - PRESS TO START -
-                    </button>
-                    <div class="text-[10px] text-slate-500">© 2026 ARCANA CONNECT PROJECT All Rights Reserved.</div>
                 </div>
             </section>
 
@@ -484,13 +466,42 @@
 
                     <div id="subview-formation" class="space-y-4">
                         <div>
-                            <div class="text-xs text-slate-400 mb-2">出撃メインパーティ（最大3体）</div>
+                            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-2">
+                                <div class="text-xs text-slate-400">出撃メインパーティ（最大3体）</div>
+                                <div class="bg-slate-950/85 border border-amber-500/50 rounded-xl px-3 py-1.5 flex items-center justify-between sm:justify-center gap-2 shadow-lg">
+                                    <span class="text-[10px] md:text-xs font-bold text-slate-400">PARTY POWER</span>
+                                    <span id="party-combat-power" class="text-base md:text-lg font-black text-gold font-cinzel tracking-wider">0</span>
+                                </div>
+                            </div>
                             <div class="grid grid-cols-3 gap-2 md:gap-4" id="party-slots-container"></div>
                         </div>
 
                         <div>
                             <div class="text-xs text-slate-400 mb-2 pt-2">所持ユニット一覧（タップで編成追加）</div>
                             <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 md:gap-3" id="roster-grid"></div>
+                        </div>
+                    </div>
+
+                    <div id="skill-info-panel" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm items-center justify-center p-4" onclick="closeSkillInfo(event)">
+                        <div id="skill-info-card" class="w-full max-w-md bg-slate-900 border-2 border-amber-500/60 rounded-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
+                            <div class="flex items-start justify-between gap-3 mb-4">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <img id="skill-info-image" src="" class="w-16 h-16 object-contain rounded-xl bg-slate-950 border border-slate-700">
+                                    <div class="min-w-0">
+                                        <div id="skill-info-rarity" class="text-[10px] font-black text-amber-400"></div>
+                                        <div id="skill-info-name" class="text-sm md:text-base font-black text-white truncate"></div>
+                                        <div id="skill-info-element" class="text-[10px] text-slate-400 mt-0.5"></div>
+                                    </div>
+                                </div>
+                                <button onclick="closeSkillInfo()" class="shrink-0 text-slate-400 hover:text-white w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="bg-gradient-to-r from-amber-950/80 to-slate-950 border border-amber-500/30 rounded-2xl p-4">
+                                <div class="text-[10px] text-amber-400 font-black tracking-widest mb-1">SPECIAL SKILL</div>
+                                <div id="skill-info-skill-name" class="text-xl font-black text-white"></div>
+                                <div id="skill-info-level" class="text-[10px] text-purple-300 font-bold mt-1"></div>
+                                <div id="skill-info-effect" class="text-xs md:text-sm text-slate-200 leading-relaxed mt-3 whitespace-pre-line"></div>
+                            </div>
+                            <div class="mt-3 text-[10px] text-slate-500 text-center">キャラクターカードをタップしてスキル詳細を確認できます</div>
                         </div>
                     </div>
 
@@ -619,8 +630,7 @@
                     <h3 class="text-base md:text-lg font-black text-emerald-400">デイリーミッション</h3>
                     <button onclick="closeMissionsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
-                <div id="missions-list" class="space-y-2 mb-4 text-left"></div>
-                <button onclick="closeMissionsModal()" class="w-full bg-slate-800 text-slate-300 font-bold text-xs py-2 rounded-xl border border-slate-700">閉じる</button>
+                <div id="missions-list" class="space-y-2 text-left"></div>
             </div>
         </div>
 
@@ -1237,8 +1247,43 @@
             if (sub === 'relic') renderRelicUI();
         }
 
+        // 編成画面と実戦で同じステータス計算を使うための共通処理
+        function getUnitBattleStats(unitId) {
+            const unit = MASTER_UNITS[unitId];
+            const inv = playerData.inventory[unitId];
+            if (!unit || !inv) return null;
+
+            let bonusAtk = (inv.level * 8) + (inv.awaken * 50);
+            let bonusHp = (inv.level * 25) + (inv.awaken * 150);
+
+            if (inv.equippedRelicInstanceId) {
+                const relic = playerData.relics.find(rel => rel.instanceId === inv.equippedRelicInstanceId);
+                if (relic) {
+                    if (relic.stat === 'atk') bonusAtk += relic.val;
+                    if (relic.stat === 'hp') bonusHp += relic.val;
+                }
+            }
+
+            const hp = unit.baseHp + bonusHp;
+            const atk = unit.baseAtk + bonusAtk;
+            return { hp, atk };
+        }
+
+        // 戦闘力は実戦で使われるHP・攻撃力をもとに算出
+        function getUnitCombatPower(unitId) {
+            const stats = getUnitBattleStats(unitId);
+            if (!stats) return 0;
+            return Math.floor(stats.hp + (stats.atk * 5));
+        }
+
+        function getPartyCombatPower() {
+            return playerData.party.reduce((total, unitId) => total + getUnitCombatPower(unitId), 0);
+        }
+
         function renderPartyUI() {
             const partyContainer = document.getElementById('party-slots-container');
+            const combatPowerEl = document.getElementById('party-combat-power');
+            if (combatPowerEl) combatPowerEl.innerText = getPartyCombatPower().toLocaleString();
             partyContainer.innerHTML = '';
 
             for (let i = 0; i < 3; i++) {
@@ -1250,12 +1295,15 @@
                     const inv = playerData.inventory[unitId];
                     unitSlot.className = 'relative aspect-[4/3] bg-slate-900 border-2 border-amber-500/50 rounded-2xl p-1.5 md:p-2.5 flex items-center space-x-1.5 md:space-x-2 shadow-xl';
                     unitSlot.innerHTML = `
-                        <button onclick="removeFromParty(${i})" class="absolute top-1.5 right-1.5 bg-slate-950/80 text-slate-300 w-4 h-4 md:w-5 md:h-5 rounded-full text-[10px] md:text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-                        <img src="${unit.image}" class="h-full w-10 md:w-16 object-contain">
-                        <div class="overflow-hidden">
-                            <div class="text-[10px] md:text-xs font-bold text-white truncate">${unit.name}</div>
-                            <div class="text-[9px] md:text-[10px] text-slate-400">Lv.${inv.level} | ★${inv.awaken}</div>
-                        </div>
+                        <button onclick="removeFromParty(${i})" class="absolute top-1.5 right-1.5 z-10 bg-slate-950/80 text-slate-300 w-4 h-4 md:w-5 md:h-5 rounded-full text-[10px] md:text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                        <button onclick="openSkillInfo('${unitId}')" class="w-full h-full flex items-center space-x-1.5 md:space-x-2 text-left cursor-pointer rounded-xl hover:bg-slate-800/40 transition">
+                            <img src="${unit.image}" class="h-full w-10 md:w-16 object-contain shrink-0">
+                            <div class="overflow-hidden min-w-0 pr-1">
+                                <div class="text-[10px] md:text-xs font-bold text-white truncate">${unit.name}</div>
+                                <div class="text-[9px] md:text-[10px] text-slate-400">Lv.${inv.level} | ★${inv.awaken}</div>
+                                <div class="text-[9px] md:text-[10px] text-amber-300 font-bold truncate mt-0.5"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>${unit.skillName}</div>
+                            </div>
+                        </button>
                     `;
                 } else {
                     unitSlot.className = 'bg-slate-900/60 border-2 border-dashed border-slate-700 rounded-2xl p-2 flex items-center justify-center';
@@ -1271,10 +1319,59 @@
                 const inParty = playerData.party.includes(unitId);
                 const card = document.createElement('div');
                 card.className = `bg-slate-900 border rounded-2xl p-2 flex flex-col items-center cursor-pointer ${inParty ? 'opacity-40 border-slate-800' : 'border-amber-500/40'}`;
-                card.onclick = () => { if (!inParty) addToParty(unitId); };
-                card.innerHTML = `<img src="${unit.image}" class="h-12 md:h-16 object-contain"><span class="text-[9px] font-bold text-slate-200 truncate w-full text-center">${unit.name}</span>`;
+                card.onclick = () => {
+                    if (inParty) openSkillInfo(unitId);
+                    else addToParty(unitId);
+                };
+                card.innerHTML = `<img src="${unit.image}" class="h-12 md:h-16 object-contain"><span class="text-[9px] font-bold text-slate-200 truncate w-full text-center">${unit.name}</span><span class="text-[8px] text-amber-300 truncate w-full text-center mt-0.5">${unit.skillName}</span>`;
                 rosterGrid.appendChild(card);
             });
+        }
+
+        function getSkillInfo(unitId) {
+            const unit = MASTER_UNITS[unitId];
+            const inv = playerData.inventory[unitId] || {};
+            if (!unit) return null;
+            const skillLevel = inv.skillLevel || 1;
+            const power = unit.skillPower * (1 + (skillLevel - 1) * 0.15);
+            const typeText = { single: '単体攻撃', all: '全体攻撃', heal: '味方全体回復' }[unit.skillType] || '特殊効果';
+            let effect = '';
+            if (unit.skillType === 'heal') {
+                effect = `味方全体のHPを攻撃力の ${Math.round(power * 100)}% 回復。`;
+                if (unit.statusEffect === 'atk_up') effect += '\nさらに自身の攻撃力が30%上昇し、その後の通常攻撃が強化されます。';
+            } else if (unit.skillType === 'all') {
+                effect = `敵全体に攻撃力の ${Math.round(power * 100)}% のダメージ。`;
+                if (unit.statusEffect === 'poison') effect += '\nさらに毒を付与し、敵ターン開始時に最大HPの8%のダメージを与えます。';
+                if (unit.statusEffect === 'def_down') effect += '\nさらに防御力低下を付与し、通常攻撃から受けるダメージが25%増加します。';
+            } else {
+                effect = `敵単体に攻撃力の ${Math.round(power * 100)}% のダメージ。`;
+                if (unit.statusEffect === 'stun') effect += '\nさらにスタンを付与し、対象の次の行動を1回スキップさせます。';
+            }
+            return { unit, inv, skillLevel, power, typeText, effect };
+        }
+
+        function openSkillInfo(unitId) {
+            const info = getSkillInfo(unitId);
+            if (!info) return;
+            const elementNames = { fire: '火属性', water: '水属性', wind: '風属性', light: '光属性', dark: '闇属性' };
+            document.getElementById('skill-info-image').src = info.unit.image;
+            document.getElementById('skill-info-rarity').innerText = `${info.unit.rarity} / ${info.typeText}`;
+            document.getElementById('skill-info-name').innerText = info.unit.name;
+            document.getElementById('skill-info-element').innerText = elementNames[info.unit.element] || info.unit.element;
+            document.getElementById('skill-info-skill-name').innerText = info.unit.skillName;
+            document.getElementById('skill-info-level').innerText = `スキルLv.${info.skillLevel}　｜　威力倍率 ${info.power.toFixed(2)}倍`;
+            document.getElementById('skill-info-effect').innerText = info.effect;
+            const panel = document.getElementById('skill-info-panel');
+            panel.classList.remove('hidden');
+            panel.classList.add('flex');
+        }
+
+        function closeSkillInfo(event) {
+            if (event && event.target !== event.currentTarget) return;
+            const panel = document.getElementById('skill-info-panel');
+            if (!panel) return;
+            panel.classList.add('hidden');
+            panel.classList.remove('flex');
         }
 
         function addToParty(unitId) {
