@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アルカナ・コネクト - Arcana Connect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            background-color: #090a0f;
+            color: #ffffff;
+        }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-thumb { background: rgba(234, 179, 8, 0.4); border-radius: 3px; }
+        
+        .gold-gradient {
+            background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
+        }
+        .gold-gradient-hover:hover {
+            background: linear-gradient(135deg, #d4af37 0%, #ffffff 25%, #c59b27 50%, #ffffff 75%, #bb882a 100%);
+        }
+        .text-gold {
+            background: linear-gradient(135deg, #fce055 0%, #d4af37 50%, #e6c875 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge-fire { background-color: #991b1b; color: #fca5a5; }
+        .badge-water { background-color: #075985; color: #7dd3fc; }
+        .badge-wind { background-color: #166534; color: #86efac; }
+        .badge-light { background-color: #854d0e; color: #fef08a; }
+        .badge-dark { background-color: #581c87; color: #e9d5ff; }
+
+        .enemy-sprite {
+            width: 140px;
+            height: 140px;
+            max-height: 38vh;
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: center bottom;
+            display: inline-block;
+            transition: transform 0.15s ease-out, filter 0.2s;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.8));
+            position: relative;
+            z-index: 5;
+        }
+        
+        .sprite-goblin     { background-image: url('enemy1.png'); }
+        .sprite-wolf       { background-image: url('enemy2.png'); }
+        .sprite-skeleton   { background-image: url('enemy3.png'); }
+        .sprite-slime      { background-image: url('enemy4.png'); }
+        .sprite-golem      { background-image: url('enemy5.png'); }
+        .sprite-dragon     { background-image: url('enemy6.png'); }
+        .sprite-luciferia  { background-image: url('ChatGPT Image 2026年9月21日 09_19_42.png'); }
+        .sprite-bahamut    { background-image: url('ChatGPT Image 2026年9月21日 09_42_34.png'); }
+        .sprite-chronos    { background-image: url('ChatGPT Image 2026年9月21日 09_47_46 (1).jpg'); }
+
+        .enemy-sprite.is-boss {
+            width: 190px;
+            height: 190px;
+            transform: scale(1.15);
+            filter: drop-shadow(0 0 25px rgba(239, 68, 68, 0.8)) drop-shadow(0 15px 20px rgba(0,0,0,0.9));
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.9; transform: scale(1.08); }
+        }
+        .animate-pulse-glow { animation: pulse-glow 2.5s infinite ease-in-out; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 3.5s ease-in-out infinite; }
+
+        @keyframes float-damage {
+            0% { opacity: 0; transform: translateY(10px) scale(0.6); }
+            20% { opacity: 1; transform: translateY(-10px) scale(1.3); }
+            80% { opacity: 1; transform: translateY(-30px) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(0.8); }
+        }
+        .damage-number {
+            position: absolute;
+            font-family: 'Cinzel', 'M PLUS Rounded 1c', sans-serif;
+            font-weight: 900;
+            text-shadow: 0 0 8px #000, 0 0 15px #ff0000, 2px 2px 0px #000;
+            pointer-events: none;
+            z-index: 40;
+            animation: float-damage 0.8s ease-out forwards;
+        }
+
+        .nav-custom-img-icon {
+            height: 52px;
+            width: auto;
+            max-width: 100px;
+            object-fit: contain;
+            transition: transform 0.2s, filter 0.2s;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+        }
+        .nav-btn.active-tab .nav-custom-img-icon {
+            filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.95));
+            transform: scale(1.12);
+        }
+
+        /* Gacha Flashy FX */
+        .gacha-bg-flash {
+            background-image: url('lucid-origin_A_flashy_gacha_screen_background_for_a_mobile_game_inspired_by_the_art_styles_of-0.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+        @keyframes gacha-magic-pulse {
+            0% { transform: scale(0.9) rotate(0deg); opacity: 0.7; filter: drop-shadow(0 0 20px #eab308); }
+            50% { transform: scale(1.1) rotate(180deg); opacity: 1; filter: drop-shadow(0 0 50px #c084fc); }
+            100% { transform: scale(0.9) rotate(360deg); opacity: 0.7; filter: drop-shadow(0 0 20px #eab308); }
+        }
+        .animate-gacha-magic { animation: gacha-magic-pulse 3s infinite linear; }
+
+        /* Gacha: make the banner and summon controls the visual focus */
+        #screen-gacha {
+            padding: 10px clamp(10px, 2.5vw, 28px) 14px;
+            overflow: hidden;
+        }
+        #screen-gacha > div {
+            max-width: 1180px;
+            justify-content: flex-start;
+            gap: 8px;
+            min-height: 0;
+        }
+        #gacha-banner-box {
+            min-height: 0;
+            height: min(44vh, 430px);
+            flex-shrink: 1;
+        }
+        #gacha-relic-display img {
+            height: clamp(92px, 13vh, 150px);
+            width: clamp(92px, 13vh, 150px);
+        }
+        #gacha-action-panel {
+            width: 100%;
+            flex-shrink: 0;
+        }
+        #gacha-action-panel > div:first-child {
+            padding: 10px 14px;
+        }
+        #gacha-action-panel button {
+            min-height: 72px;
+            padding: 10px 14px;
+        }
+        @media (max-height: 760px) {
+            #screen-gacha { padding-top: 6px; padding-bottom: 8px; }
+            #screen-gacha > div { gap: 5px; }
+            #gacha-banner-box { height: min(39vh, 330px); }
+            #gacha-action-panel { gap: 6px; }
+            #gacha-action-panel > div:first-child { padding: 7px 12px; }
+            #gacha-action-panel button { min-height: 62px; padding: 8px 12px; }
+        }
+        .battle-name-ui {
+            font-size: 15px;
+            line-height: 1.25;
+            font-weight: 900;
+            letter-spacing: 0.01em;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.95);
+        }
+        .battle-enemy-name-ui {
+            font-size: 14px;
+            line-height: 1.2;
+        }
+        @media (min-width: 768px) {
+            .battle-name-ui { font-size: 17px; }
+            .battle-enemy-name-ui { font-size: 16px; }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex justify-center items-center bg-slate-950 p-0">
+
+    <div id="app" class="relative w-full h-full bg-slate-900 flex flex-col shadow-2xl overflow-hidden border-0">
+
+        <!-- Header -->
+        <header class="bg-slate-900/95 backdrop-blur-md border-b border-amber-500/30 px-4 py-2 flex items-center justify-between text-xs z-30 shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-400 text-slate-950 font-black rounded-full px-3 py-1 text-xs shadow">
+                    Lv.<span id="player-level">1</span>
+                </div>
+                <div class="font-black text-slate-100 text-sm tracking-wide" id="player-name">召喚士</div>
+            </div>
+
+            <div class="hidden md:block font-cinzel text-amber-400 font-extrabold text-base tracking-widest text-gold">
+                ARCANA CONNECT
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleAudio()" id="btn-audio" class="bg-slate-800 border border-slate-700 hover:border-amber-400 rounded-full w-7 h-7 flex items-center justify-center text-slate-300 transition">
+                    <i id="icon-audio" class="fa-solid fa-volume-high text-xs"></i>
+                </button>
+                <div class="bg-slate-800/90 border border-slate-700 rounded-full pl-3 pr-1 py-1 flex items-center space-x-2 shadow-inner">
+                    <i class="fa-solid fa-bolt text-amber-400 text-xs"></i>
+                    <span id="player-ap" class="font-bold text-amber-300">50</span><span class="text-slate-500 text-[10px]">/50</span>
+                    <button onclick="confirmRecoverAP()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-full w-5 h-5 flex items-center justify-center text-xs transition shadow ml-1" title="AP回復">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                    </button>
+                </div>
+                <div class="bg-slate-800/90 border border-amber-500/40 rounded-full px-3 py-1 flex items-center space-x-2 shadow-inner">
+                    <i class="fa-solid fa-gem text-cyan-400 text-xs"></i>
+                    <span id="player-gems" class="font-bold text-cyan-300">3,000</span>
+                </div>
+                <div class="bg-slate-800/90 border border-purple-500/40 rounded-full px-3 py-1 flex items-center space-x-2 shadow-inner">
+                    <i class="fa-solid fa-crystal-ball text-purple-400 text-xs"></i>
+                    <span id="player-crystals" class="font-bold text-purple-300">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Viewport -->
+        <main id="main-content" class="relative flex-1 overflow-hidden bg-slate-950 flex flex-col">
+
+            <!-- HOME -->
+            <section id="screen-home" class="view-screen absolute inset-0 flex flex-col md:flex-row p-4 gap-4 bg-cover bg-center" style="background-image: linear-gradient(to right, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.4)), url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1400&q=80');">
+                <div class="flex-1 relative flex flex-col items-center justify-center min-h-[280px]">
+                    <div id="home-character-glow" class="absolute w-72 h-72 bg-cyan-500/20 rounded-full filter blur-3xl animate-pulse-glow"></div>
+                    <img id="home-character-img" src="Gemini_Generated_Image_88wbnf88wbnf88wb.png" alt="Featured Unit" class="relative h-full max-h-[420px] object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.9)] animate-float cursor-pointer" onclick="triggerHomeDialogue()">
+                    
+                    <div id="home-dialogue" class="absolute bottom-2 bg-slate-900/90 border border-cyan-400/50 rounded-2xl p-3 text-xs md:text-sm text-cyan-100 max-w-lg w-full text-center shadow-2xl backdrop-blur-md transition-all duration-300">
+                        <span id="home-dialogue-text">「未熟者ですが、精一杯頑張ります！」</span>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-80 flex flex-col justify-between space-y-3 z-10 shrink-0">
+                    <div class="bg-slate-900/80 backdrop-blur-md border border-purple-500/40 rounded-2xl p-4 shadow-xl">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] text-purple-400 font-extrabold tracking-widest uppercase">NEW BOSS CHRONOS</span>
+                            <span class="bg-purple-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full">CHAPTER 8</span>
+                        </div>
+                        <div class="text-base font-black text-white">「虚無竜クロノス」降臨！</div>
+                        <p class="text-xs text-slate-300 mt-1">クエスト第8章＆バベルタワー最深部(48F〜)に新たな暗黒竜が到来！</p>
+                        <button onclick="switchTab('quest')" class="w-full mt-3 bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white text-xs font-black py-2 rounded-xl shadow-lg transform active:scale-95 transition">
+                            クエストへ挑戦
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-1 gap-3">
+                        <button onclick="switchTab('tower')" class="relative overflow-hidden group bg-gradient-to-r from-amber-950 via-amber-900/80 to-slate-900 border border-amber-500/50 hover:border-amber-400 rounded-2xl p-3 text-left shadow-xl active:scale-95 transition">
+                            <div class="absolute -right-2 -bottom-3 text-amber-500/20 text-6xl group-hover:scale-110 transition"><i class="fa-solid fa-chess-rook"></i></div>
+                            <div class="text-[10px] text-amber-300 font-bold">END CONTENT</div>
+                            <div class="text-sm font-black text-white">試練のバベルタワー</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">全50階層の階層型ダンジョン</div>
+                        </button>
+
+                        <button onclick="switchTab('quest')" class="relative overflow-hidden group bg-gradient-to-r from-indigo-950 via-indigo-900/80 to-slate-900 border border-indigo-500/50 hover:border-indigo-400 rounded-2xl p-3 text-left shadow-xl active:scale-95 transition">
+                            <div class="absolute -right-2 -bottom-3 text-indigo-500/20 text-6xl group-hover:scale-110 transition"><i class="fa-solid fa-dragon"></i></div>
+                            <div class="text-[10px] text-indigo-300 font-bold">QUEST</div>
+                            <div class="text-sm font-black text-white">全8章 クエスト討伐</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">装備ドロップ & 章順次解放</div>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- GACHA (ENHANCED & FLASHIER DESIGN) -->
+            <section id="screen-gacha" class="view-screen absolute inset-0 hidden bg-gradient-to-b from-slate-950 via-purple-950/90 to-slate-950 overflow-y-auto">
+                <div class="mx-auto w-full h-full flex flex-col justify-start">
+                    <div class="text-center shrink-0">
+                        <h2 class="text-3xl md:text-4xl font-black text-gold font-cinzel tracking-widest drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]">ARCANA SUMMON</h2>
+                        <p class="text-xs text-purple-300 mt-1">最高レアSSR出現率超絶UP中！強力なアルカナを召喚せよ！</p>
+                        <div class="flex justify-center space-x-4 mt-3">
+                            <button id="gacha-type-char" onclick="setGachaType('char')" class="px-6 py-2 text-xs md:text-sm font-black rounded-xl bg-amber-500 text-slate-950 shadow-lg transition">キャラクター召喚</button>
+                            <button id="gacha-type-equip" onclick="setGachaType('equip')" class="px-6 py-2 text-xs md:text-sm font-black rounded-xl bg-slate-800 text-slate-300 shadow-lg transition">装備(レリック)ガチャ</button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-3 items-center w-full">
+                        <div id="gacha-banner-box" class="relative w-full rounded-3xl border-2 border-amber-400/80 overflow-hidden bg-slate-900 shadow-[0_0_35px_rgba(245,158,11,0.3)] flex flex-col justify-end group">
+                            <img id="gacha-banner-img" src="ChatGPT Image 2026年9月21日 09_08_35.png" class="absolute inset-0 w-full h-full object-cover object-top opacity-90 group-hover:scale-105 transition-transform duration-500" alt="Gacha Banner">
+                            
+                            <div id="gacha-relic-display" class="hidden absolute inset-0 bg-gradient-to-br from-slate-950 via-amber-950/60 to-slate-900 p-6 flex-col justify-center items-center text-center space-y-4">
+                                <div class="flex justify-center items-center space-x-6 my-2">
+                                    <div class="flex flex-col items-center">
+                                        <img src="ChatGPT Image 2026年9月21日 09_26_46.png" class="h-24 w-24 object-contain drop-shadow-[0_0_20px_rgba(245,158,11,0.9)]">
+                                        <span class="text-xs text-amber-300 font-black mt-2">聖剣の欠片</span>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <img src="ChatGPT Image 2026年9月21日 09_30_46.png" class="h-24 w-24 object-contain drop-shadow-[0_0_20px_rgba(168,85,247,0.9)]">
+                                        <span class="text-xs text-purple-300 font-black mt-2">イージスの盾</span>
+                                    </div>
+                                    <div class="flex flex-col items-center">
+                                        <img src="ChatGPT Image 2026年9月21日 09_33_51.png" class="h-24 w-24 object-contain drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]">
+                                        <span class="text-xs text-rose-300 font-black mt-2">破滅の斧</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="relative z-10 p-5 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent">
+                                <span id="gacha-banner-tag" class="inline-block px-3 py-1 bg-gradient-to-r from-rose-500 to-amber-500 text-slate-950 font-black text-xs rounded-full w-max mb-2 shadow">PICK UP SSR 3.0%</span>
+                                <h3 id="gacha-banner-title" class="text-2xl md:text-3xl font-black text-white tracking-wide drop-shadow">【SSR】紅蓮の剣姫フレイア</h3>
+                                <p id="gacha-banner-desc" class="text-xs md:text-sm text-amber-200 mt-1">【火属性】圧倒的超火力！「クリムゾン・ブレイド」発動可能！</p>
+                            </div>
+                        </div>
+
+                        <div id="gacha-action-panel" class="flex flex-col justify-center gap-3">
+                            <div class="bg-slate-900/90 border border-purple-500/40 rounded-2xl p-4 text-xs text-slate-300 space-y-2 shadow-xl">
+                                <div class="text-amber-400 font-bold border-b border-slate-800 pb-1 flex justify-between">
+                                    <span>提供割合</span>
+                                    <span class="text-purple-300 font-mono">10連でSR以上確定</span>
+                                </div>
+                                <div class="flex justify-between"><span>SSR アルカナ</span><span class="font-bold text-amber-400">3.0%</span></div>
+                                <div class="flex justify-between"><span>SR アルカナ</span><span class="font-bold text-purple-400">18.0%</span></div>
+                                <div class="flex justify-between"><span>R / N</span><span class="font-bold text-blue-400">79.0%</span></div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <button onclick="performGacha(1)" class="w-full bg-gradient-to-b from-slate-800 to-slate-900 border border-amber-500/40 hover:border-amber-400 rounded-2xl p-4 md:p-5 text-center shadow-xl active:scale-95 transition min-h-[92px]">
+                                    <div class="text-xs text-slate-300 font-bold">1回召喚</div>
+                                    <div class="text-base font-black text-cyan-300 mt-0.5 flex items-center justify-center space-x-1">
+                                        <i class="fa-solid fa-gem text-xs"></i><span>300</span>
+                                    </div>
+                                </button>
+
+                                <button onclick="performGacha(10)" class="w-full gold-gradient gold-gradient-hover text-slate-950 rounded-2xl p-5 md:p-6 text-center font-black shadow-2xl active:scale-95 transition transform hover:-translate-y-0.5 min-h-[92px]">
+                                    <div class="text-xs uppercase tracking-wider text-amber-950 font-black">10連アルカナ召喚 (SR1枠確定)</div>
+                                    <div class="text-xl font-extrabold mt-1 flex items-center justify-center space-x-1 text-slate-950">
+                                        <i class="fa-solid fa-gem"></i><span>3,000</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- QUEST -->
+            <section id="screen-quest" class="view-screen absolute inset-0 hidden p-5 bg-slate-950 overflow-y-auto">
+                <div class="max-w-5xl mx-auto">
+                    <div class="mb-4 bg-gradient-to-r from-amber-950 to-slate-900 border border-amber-500/50 rounded-2xl p-3 flex justify-between items-center shadow-lg">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-chess-rook text-amber-400 text-2xl"></i>
+                            <div>
+                                <div class="text-xs font-black text-amber-300">エンドコンテンツ</div>
+                                <div class="text-sm font-black text-white">試練のバベルタワー挑戦</div>
+                            </div>
+                        </div>
+                        <button onclick="switchTab('tower')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-4 py-2 rounded-xl transition">
+                            タワーへ向かう
+                        </button>
+                    </div>
+
+                    <div class="mb-4 border-b border-slate-800 pb-2 flex justify-between items-end">
+                        <div>
+                            <h2 class="text-2xl font-black text-amber-400 font-cinzel">QUEST STAGES</h2>
+                            <p class="text-xs text-slate-400">各章をクリアして次章を解放！複数横並びで出現する強敵群を破れ！</p>
+                        </div>
+                    </div>
+
+                    <div id="quest-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-12"></div>
+                </div>
+            </section>
+
+            <!-- TOWER -->
+            <section id="screen-tower" class="view-screen absolute inset-0 hidden p-5 bg-slate-950 overflow-y-auto">
+                <div class="max-w-3xl mx-auto text-center space-y-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-amber-400 font-cinzel tracking-wider">TOWER OF TRIALS</h2>
+                        <p class="text-xs text-slate-400">全50階層のエンドコンテンツ。48階以上の最深部では虚無竜クロノスが君臨！</p>
+                    </div>
+
+                    <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                        <div class="text-xs text-amber-400 font-extrabold mb-1">現在の到達階層</div>
+                        <div class="text-5xl font-black text-white font-cinzel mb-4">階層 <span id="tower-floor-display" class="text-gold">1</span> / 50</div>
+                        
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 max-w-md mx-auto mb-6">
+                            <div class="text-amber-300 font-bold mb-1">第 <span id="tower-target-floor">1</span> 階層 守護者</div>
+                            <div id="tower-enemy-info" class="text-slate-400">属性: 火 | 推奨戦闘力: 800</div>
+                            <div class="text-emerald-400 mt-2 font-bold">初回クリア報酬: <i class="fa-solid fa-gem text-xs"></i> 300 ジュエル</div>
+                        </div>
+
+                        <button onclick="startTowerChallenge()" class="gold-gradient gold-gradient-hover text-slate-950 font-black px-12 py-3 rounded-xl text-sm shadow-xl transform active:scale-95 transition">
+                            タワーに挑戦する
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PARTY & ENHANCE (FIXED AWAKENING & LEVEL UP) -->
+            <section id="screen-party" class="view-screen absolute inset-0 hidden p-5 bg-slate-950 overflow-y-auto">
+                <div class="max-w-5xl mx-auto">
+                    <div class="flex border-b border-slate-800 mb-4">
+                        <button id="tab-party-formation" onclick="switchPartySubTab('formation')" class="px-6 py-2 text-sm font-bold border-b-2 border-amber-400 text-amber-400">パーティ編成</button>
+                        <button id="tab-party-enhance" onclick="switchPartySubTab('enhance')" class="px-6 py-2 text-sm font-bold border-b-2 border-transparent text-slate-400">覚醒・強化</button>
+                        <button id="tab-party-relic" onclick="switchPartySubTab('relic')" class="px-6 py-2 text-sm font-bold border-b-2 border-transparent text-slate-400">装備（レリック）</button>
+                    </div>
+
+                    <div id="subview-formation" class="space-y-4">
+                        <div>
+                            <div class="text-xs text-slate-400 mb-2">出撃メインパーティ（最大3体）</div>
+                            <div class="grid grid-cols-3 gap-4" id="party-slots-container"></div>
+                        </div>
+
+                        <div>
+                            <div class="text-xs text-slate-400 mb-2 pt-2">所持ユニット一覧（タップで編成追加）</div>
+                            <div class="grid grid-cols-4 md:grid-cols-6 gap-3" id="roster-grid"></div>
+                        </div>
+                    </div>
+
+                    <div id="subview-enhance" class="hidden space-y-3">
+                        <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
+                            <span>ユニットのレベルアップ・覚醒（必要クリスタル: ガチャ重複などで獲得）</span>
+                            <span class="text-purple-300 font-bold">所持クリスタル: <i class="fa-solid fa-crystal-ball text-xs"></i> <span id="enhance-crystal-count">0</span></span>
+                        </div>
+                        <div id="enhance-unit-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                    </div>
+
+                    <div id="subview-relic" class="hidden space-y-4">
+                        <div class="text-xs text-slate-400">クエストドロップやガチャで獲得した装備をキャラにセットできます。</div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3">
+                                <div class="text-xs font-bold text-amber-400 mb-2">装備対象ユニット</div>
+                                <div id="relic-unit-select" class="space-y-2"></div>
+                            </div>
+                            <div class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-3">
+                                <div class="text-xs font-bold text-amber-400 mb-2">所持装備一覧</div>
+                                <div id="relic-inventory-grid" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BATTLE ARENA (MULTIPLE ENEMIES SIDE BY SIDE) -->
+            <section id="screen-battle" class="view-screen absolute inset-0 hidden flex flex-col bg-slate-950 overflow-hidden">
+                <div class="relative flex-1 bg-cover bg-center flex flex-col justify-between p-3 md:p-5 border-b border-slate-800/80 overflow-hidden" style="background-image: linear-gradient(to bottom, rgba(15,23,42,0.3), rgba(15,23,42,0.92)), url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1400&q=80');">
+                    
+                    <!-- Enemy Header Block -->
+                    <div class="w-full flex flex-col items-center pt-1 z-20 relative">
+                        <div class="flex items-center space-x-2 bg-slate-900/90 border border-amber-500/60 rounded-full px-4 py-1 mb-1 shadow-2xl backdrop-blur-md">
+                            <span class="text-[10px] text-amber-400 font-extrabold uppercase tracking-widest">WAVE</span>
+                            <span id="battle-wave-text" class="text-sm font-black text-white font-cinzel">1 / 3</span>
+                        </div>
+                    </div>
+
+                    <!-- Multiple Enemies Sprites & Health Row -->
+                    <div class="flex-1 relative flex items-center justify-center my-auto min-h-[180px] max-h-[300px] z-10 py-2 w-full max-w-4xl mx-auto">
+                        <div id="enemies-row" class="flex justify-around items-end w-full px-4 space-x-2">
+                            <!-- Dynamically populated multiple enemy sprites -->
+                        </div>
+                    </div>
+
+                    <!-- Party Units Row -->
+                    <div id="battle-party-row" class="flex justify-center space-x-3 md:space-x-12 items-end pb-2 z-20 relative"></div>
+                </div>
+
+                <!-- Bottom Battle Control Deck -->
+                <div class="bg-slate-950/95 border-t border-slate-800 p-2 md:p-3 flex flex-col md:flex-row gap-2.5 items-center justify-between shrink-0 z-30 backdrop-blur-md">
+                    <div id="battle-log" class="w-full md:w-1/4 h-12 md:h-20 bg-slate-900/90 border border-slate-800 rounded-xl p-2 text-[10px] text-amber-200/90 overflow-y-auto font-mono shrink-0 shadow-inner">
+                        バトルが開始されました。
+                    </div>
+
+                    <div id="battle-skill-buttons" class="w-full md:flex-1 grid grid-cols-3 gap-2"></div>
+
+                    <div class="w-full md:w-auto flex md:flex-col justify-between space-x-2 md:space-x-0 md:space-y-1.5 shrink-0">
+                        <button onclick="toggleSpeed()" id="btn-speed" class="px-3 py-1.5 flex-1 md:flex-none bg-slate-800 border border-slate-700 rounded-xl text-xs text-amber-300 font-extrabold hover:bg-slate-700 active:scale-95 transition text-center">
+                            速度: <span id="speed-status">1x</span>
+                        </button>
+                        <button onclick="toggleAutoBattle()" id="btn-auto" class="px-3 py-1.5 flex-1 md:flex-none bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-300 font-extrabold hover:bg-slate-700 active:scale-95 transition text-center">
+                            AUTO: <span id="auto-status" class="text-rose-400">OFF</span>
+                        </button>
+                        <button onclick="retreatBattle()" class="px-3 py-1.5 flex-1 md:flex-none bg-rose-950/80 border border-rose-800/60 rounded-xl text-xs text-rose-300 font-extrabold hover:bg-rose-900 active:scale-95 transition text-center">
+                            撤退
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav id="bottom-nav" class="bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-6 py-0.5 flex justify-around items-center z-30 shrink-0 h-16">
+            <button onclick="switchTab('home')" id="nav-home" class="nav-btn flex flex-col items-center text-amber-400 active-tab transition px-2 py-0">
+                <img src="ChatGPT Image 2026年9月21日 08_28_30 (1).png" alt="ホーム" class="nav-custom-img-icon">
+            </button>
+            <button onclick="switchTab('quest')" id="nav-quest" class="nav-btn flex flex-col items-center text-slate-400 hover:text-amber-300 transition px-2 py-0">
+                <img src="ChatGPT Image 2026年9月21日 08_17_54 (1).png" alt="クエスト" class="nav-custom-img-icon">
+            </button>
+            <button onclick="switchTab('gacha')" id="nav-gacha" class="nav-btn flex flex-col items-center text-slate-400 hover:text-amber-300 transition px-2 py-0">
+                <img src="ChatGPT Image 2026年9月21日 08_20_03 (1).png" alt="ガチャ" class="nav-custom-img-icon">
+            </button>
+            <button onclick="switchTab('party')" id="nav-party" class="nav-btn flex flex-col items-center text-slate-400 hover:text-amber-300 transition px-2 py-0">
+                <img src="ChatGPT Image 2026年9月21日 08_24_09 (1).png" alt="編成・強化" class="nav-custom-img-icon">
+            </button>
+        </nav>
+
+        <!-- Gacha Summon Animated Modal with Background Image -->
+        <div id="gacha-modal" class="fixed inset-0 gacha-bg-flash z-50 hidden flex-col items-center justify-center p-4 bg-slate-950/90">
+            <div id="gacha-anim-container" class="flex flex-col items-center justify-center space-y-6">
+                <div class="relative w-48 h-48 flex items-center justify-center">
+                    <div class="absolute inset-0 rounded-full border-4 border-amber-300 border-t-purple-500 animate-gacha-magic"></div>
+                    <i class="fa-solid fa-sparkles text-6xl text-amber-300 drop-shadow-[0_0_20px_rgba(252,211,77,0.9)] animate-pulse"></i>
+                </div>
+                <div class="text-3xl font-black text-gold font-cinzel tracking-widest animate-pulse drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">SUMMONING...</div>
+            </div>
+
+            <div id="gacha-results" class="hidden flex-col items-center w-full max-w-3xl bg-slate-950/80 backdrop-blur-md p-6 rounded-3xl border border-amber-500/50 shadow-2xl">
+                <h3 class="text-3xl font-black text-gold mb-6 font-cinzel tracking-widest text-center">SUMMON RESULTS</h3>
+                <div id="gacha-results-grid" class="w-full mb-6 flex justify-center items-center"></div>
+                <button onclick="closeGachaModal()" class="gold-gradient gold-gradient-hover text-slate-950 font-black px-12 py-3.5 rounded-full text-base shadow-2xl transform active:scale-95 transition">
+                    結果を確認
+                </button>
+            </div>
+        </div>
+
+        <div id="custom-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+            <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
+                <h4 id="modal-title" class="text-base font-black text-amber-400 mb-2">お知らせ</h4>
+                <p id="modal-message" class="text-xs text-slate-300 mb-6 leading-relaxed whitespace-pre-line">メッセージ</p>
+                <div id="modal-actions" class="flex justify-center space-x-3">
+                    <button id="modal-btn-ok" onclick="closeModal()" class="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold text-xs px-8 py-2.5 rounded-full shadow-lg">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let audioEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            document.getElementById('icon-audio').className = audioEnabled ? 'fa-solid fa-volume-high text-xs' : 'fa-solid fa-volume-xmark text-xs text-rose-500';
+        }
+
+        function playSE(type) {
+            if (!audioEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'hit') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'skill') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+        }
+
+        const ENEMY_TYPES = {
+            'slime': { name: 'バブルスライム', element: 'water', spriteClass: 'sprite-slime' },
+            'goblin': { name: 'ゴブリンソルジャー', element: 'wind', spriteClass: 'sprite-goblin' },
+            'wolf': { name: 'シャドウウルフ', element: 'dark', spriteClass: 'sprite-wolf' },
+            'skeleton': { name: 'スケルトンナイト', element: 'dark', spriteClass: 'sprite-skeleton' },
+            'golem': { name: 'ロックゴーレム', element: 'fire', spriteClass: 'sprite-golem' },
+            'dragon': { name: 'レッドドラゴン', element: 'fire', spriteClass: 'sprite-dragon' },
+            'luciferia': { name: '魔王・深淵のルシフェリア', element: 'dark', spriteClass: 'sprite-luciferia' },
+            'bahamut': { name: '滅世竜バハムート', element: 'fire', spriteClass: 'sprite-bahamut' },
+            'chronos': { name: '虚無竜クロノス', element: 'dark', spriteClass: 'sprite-chronos' }
+        };
+
+        const MASTER_UNITS = {
+            'iris': { id: 'iris', name: '新進気鋭の剣士アイリス', rarity: 'R', element: 'fire', image: 'Gemini_Generated_Image_88wbnf88wbnf88wb.png', baseHp: 500, baseAtk: 125, skillName: 'ファースト・スラスト', dialogue: '「未熟者ですが、精一杯頑張ります！」' },
+            'aquaria': { id: 'aquaria', name: '蒼海の巫女アクアリア', rarity: 'SSR', element: 'water', image: 'ChatGPT Image 2026年9月21日 08_54_21.png', baseHp: 880, baseAtk: 195, skillName: 'タイダル・ヴェール', dialogue: '「清らかなる水の導きを。あなたとともに参りましょう。」' },
+            'freya': { id: 'freya', name: '紅蓮の剣姫フレイア', rarity: 'SSR', element: 'fire', image: 'ChatGPT Image 2026年9月21日 09_08_35.png', baseHp: 950, baseAtk: 220, skillName: 'クリムゾン・ブレイド', dialogue: '「私の焔からは誰も逃れられないわ。一気に決めるわよ！」' },
+            'lumina': { id: 'lumina', name: '天光の聖女ルミナ', rarity: 'SR', element: 'light', image: 'Gemini_Generated_Image_ccovrhccovrhccov.png', baseHp: 720, baseAtk: 150, skillName: 'ホーリー・サンクチュアリ', dialogue: '「光の導きがあらんことを。」' },
+            'veronica': { id: 'veronica', name: '紫電の武神ヴェロニカ', rarity: 'SR', element: 'fire', image: 'Gemini_Generated_Image_bdl520bdl520bdl5.png', baseHp: 750, baseAtk: 165, skillName: '紫電雷光閃', dialogue: '「我が槍の閃光、見切れるか！」' },
+            'mylene': { id: 'mylene', name: '星詠の猫剣士ミレーヌ', rarity: 'SR', element: 'wind', image: 'Gemini_Generated_Image_7etcxe7etcxe7etc.png', baseHp: 620, baseAtk: 155, skillName: 'スターダスト・スラッシュ', dialogue: '「にゃはっ！星の導きで切り開いちゃうよ！」' }
+        };
+
+        const MASTER_RELICS = [
+            { masterId: 'rel_sword', name: '聖剣の欠片', stat: 'atk', val: 75, rarity: 'SSR', img: 'ChatGPT Image 2026年9月21日 09_26_46.png' },
+            { masterId: 'rel_aegis', name: 'イージスの盾', stat: 'hp', val: 400, rarity: 'SSR', img: 'ChatGPT Image 2026年9月21日 09_30_46.png' },
+            { masterId: 'rel_axe', name: '破滅の斧', stat: 'atk', val: 90, rarity: 'SSR', img: 'ChatGPT Image 2026年9月21日 09_33_51.png' },
+            { masterId: 'rel_shield', name: 'ガーディアンシールド', stat: 'hp', val: 250, rarity: 'SR', icon: 'fa-shield' },
+            { masterId: 'rel_dragon_armor', name: '竜鱗の鎧', stat: 'hp', val: 300, rarity: 'SR', icon: 'fa-vest' },
+            { masterId: 'rel_sage_ring', name: '賢者の指輪', stat: 'atk', val: 45, rarity: 'SR', icon: 'fa-ring' },
+            { masterId: 'rel_ring', name: '疾風の指輪', stat: 'atk', val: 25, rarity: 'R', icon: 'fa-ring' },
+            { masterId: 'rel_boots', name: '疾風のブーツ', stat: 'hp', val: 120, rarity: 'R', icon: 'fa-shoe-prints' },
+            { masterId: 'rel_iron_dagger', name: '鉄の短剣', stat: 'atk', val: 15, rarity: 'N', icon: 'fa-pen-nib' }
+        ];
+
+        /* Multi-enemy Wave Quests */
+        const QUESTS = [
+            { id: 1, chapter: 1, name: '1章：平原の試練', ap: 5, rewardGems: 100, waves: [
+                { enemies: [{ type: 'slime', hp: 200, atk: 20 }, { type: 'slime', hp: 200, atk: 20 }] }, 
+                { enemies: [{ type: 'goblin', hp: 550, atk: 40, isBoss: true }] }
+            ] },
+            { id: 2, chapter: 2, name: '2章：闇深き遠吠え', ap: 8, rewardGems: 150, waves: [
+                { enemies: [{ type: 'wolf', hp: 450, atk: 35 }, { type: 'goblin', hp: 400, atk: 30 }] }, 
+                { enemies: [{ type: 'wolf', hp: 1100, atk: 60, isBoss: true }, { type: 'wolf', hp: 450, atk: 35 }] }
+            ] },
+            { id: 3, chapter: 3, name: '3章：地下墓地の呻き', ap: 10, rewardGems: 200, waves: [
+                { enemies: [{ type: 'skeleton', hp: 600, atk: 45 }, { type: 'skeleton', hp: 600, atk: 45 }] }, 
+                { enemies: [{ type: 'skeleton', hp: 1600, atk: 80, isBoss: true }, { type: 'wolf', hp: 700, atk: 50 }] }
+            ] },
+            { id: 4, chapter: 4, name: '4章：巨石の守護者', ap: 12, rewardGems: 250, waves: [
+                { enemies: [{ type: 'golem', hp: 1200, atk: 65 }] }, 
+                { enemies: [{ type: 'golem', hp: 2500, atk: 100, isBoss: true }, { type: 'goblin', hp: 800, atk: 50 }] }
+            ] },
+            { id: 5, chapter: 5, name: '5章：竜の領域', ap: 15, rewardGems: 300, waves: [
+                { enemies: [{ type: 'dragon', hp: 2000, atk: 90 }, { type: 'golem', hp: 1500, atk: 70 }] },
+                { enemies: [{ type: 'dragon', hp: 3600, atk: 135, isBoss: true }] }
+            ] },
+            { id: 6, chapter: 6, name: '6章：深淵の魔王城', ap: 20, rewardGems: 500, waves: [
+                { enemies: [{ type: 'dragon', hp: 3500, atk: 120 }, { type: 'skeleton', hp: 2500, atk: 90 }] }, 
+                { enemies: [{ type: 'luciferia', hp: 8500, atk: 210, isBoss: true }, { type: 'dragon', hp: 3000, atk: 100 }] }
+            ] },
+            { id: 7, chapter: 7, name: '7章：終焉を齎す龍神', ap: 25, rewardGems: 800, waves: [
+                { enemies: [{ type: 'luciferia', hp: 6000, atk: 160 }, { type: 'golem', hp: 4000, atk: 120 }] }, 
+                { enemies: [{ type: 'bahamut', hp: 14000, atk: 280, isBoss: true }] }
+            ] },
+            { id: 8, chapter: 8, name: '8章：虚無の深淵', ap: 30, rewardGems: 1000, waves: [
+                { enemies: [{ type: 'bahamut', hp: 10000, atk: 220 }, { type: 'luciferia', hp: 8000, atk: 200 }] }, 
+                { enemies: [{ type: 'chronos', hp: 21000, atk: 350, isBoss: true }] }
+            ] }
+        ];
+
+        let playerData = {
+            level: 1, gems: 3000, ap: 50, maxAp: 50, crystals: 50,
+            towerFloor: 1,
+            clearedQuests: [],
+            clearedTowerFloors: [],
+            party: ['iris', null, null],
+            inventory: {
+                'iris': { level: 1, awaken: 0, equippedRelicInstanceId: null }
+            },
+            relics: []
+        };
+
+        let currentGachaType = 'char';
+        let battleSpeed = 1;
+        let isCurrentStageClearedBefore = false;
+
+        window.onload = function() {
+            loadSavedData();
+            updateHeaderUI();
+            updateHomeDisplay();
+            renderQuests();
+            renderPartyUI();
+            renderTowerUI();
+            switchTab('home');
+        };
+
+        function saveData() {
+            try { localStorage.setItem('arcana_connect_save_v13', JSON.stringify(playerData)); } catch(e){}
+        }
+
+        function loadSavedData() {
+            try {
+                const saved = localStorage.getItem('arcana_connect_save_v13') || localStorage.getItem('arcana_connect_save_v12');
+                if(saved) playerData = { ...playerData, ...JSON.parse(saved) };
+            } catch(e){}
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`screen-${tabId}`)?.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('text-amber-400', 'active-tab');
+                b.classList.add('text-slate-400');
+            });
+            const navBtn = document.getElementById(`nav-${tabId}`);
+            if(navBtn) navBtn.classList.add('text-amber-400', 'active-tab');
+
+            if(tabId === 'home') updateHomeDisplay();
+            if(tabId === 'quest') renderQuests();
+            if(tabId === 'party') renderPartyUI();
+            if(tabId === 'tower') renderTowerUI();
+        }
+
+        function updateHomeDisplay() {
+            const ownedKeys = Object.keys(playerData.inventory);
+            if (ownedKeys.length === 0) return;
+            const unit = MASTER_UNITS[ownedKeys[0]];
+            if (unit) {
+                document.getElementById('home-character-img').src = unit.image;
+                document.getElementById('home-dialogue-text').innerText = unit.dialogue;
+            }
+        }
+
+        function updateHeaderUI() {
+            document.getElementById('player-level').innerText = playerData.level;
+            document.getElementById('player-ap').innerText = playerData.ap;
+            document.getElementById('player-gems').innerText = playerData.gems.toLocaleString();
+            document.getElementById('player-crystals').innerText = playerData.crystals;
+            const enhanceCrystalEl = document.getElementById('enhance-crystal-count');
+            if (enhanceCrystalEl) enhanceCrystalEl.innerText = playerData.crystals;
+            saveData();
+        }
+
+        function confirmRecoverAP() {
+            if (playerData.ap >= playerData.maxAp) {
+                showCustomModal('AP満タン', 'APは既に最大値に達しています。');
+                return;
+            }
+            showConfirmModal(
+                'AP回復', 
+                `ジュエル 50 個を消費して\nAPを 50 回復（全回復）しますか？\n\n(所持ジュエル: ${playerData.gems.toLocaleString()})`,
+                () => {
+                    if (playerData.gems < 50) {
+                        showCustomModal('ジュエル不足', 'ジュエルが不足しています。');
+                        return;
+                    }
+                    playerData.gems -= 50;
+                    playerData.ap = playerData.maxAp;
+                    updateHeaderUI();
+                    showCustomModal('回復完了', 'APを全回復しました！');
+                }
+            );
+        }
+
+        function showConfirmModal(title, msg, onConfirm) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = msg;
+            const actions = document.getElementById('modal-actions');
+            actions.innerHTML = `
+                <button onclick="closeModal()" class="bg-slate-800 text-slate-300 font-extrabold text-xs px-6 py-2 rounded-full border border-slate-700">キャンセル</button>
+                <button id="modal-btn-confirm" class="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold text-xs px-6 py-2 rounded-full shadow-lg">実行する</button>
+            `;
+            document.getElementById('modal-btn-confirm').onclick = () => {
+                closeModal();
+                onConfirm();
+            };
+            const m = document.getElementById('custom-modal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+
+        function showCustomModal(title, msg) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = msg;
+            const actions = document.getElementById('modal-actions');
+            actions.innerHTML = `
+                <button onclick="closeModal()" class="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-extrabold text-xs px-8 py-2.5 rounded-full shadow-lg">
+                    OK
+                </button>
+            `;
+            const m = document.getElementById('custom-modal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+            document.getElementById('custom-modal').classList.remove('flex');
+        }
+
+        function triggerHomeDialogue() {
+            const ownedKeys = Object.keys(playerData.inventory);
+            const unit = MASTER_UNITS[ownedKeys[Math.floor(Math.random() * ownedKeys.length)]];
+            if (unit) {
+                document.getElementById('home-dialogue-text').innerText = unit.dialogue;
+                document.getElementById('home-character-img').src = unit.image;
+            }
+        }
+
+        function setGachaType(type) {
+            currentGachaType = type;
+            document.getElementById('gacha-type-char').className = type === 'char' ? 'px-6 py-2 text-xs md:text-sm font-black rounded-xl bg-amber-500 text-slate-950 shadow-lg transition' : 'px-6 py-2 text-xs md:text-sm font-black rounded-xl bg-slate-800 text-slate-300 shadow-lg transition';
+            document.getElementById('gacha-type-equip').className = type === 'equip' ? 'px-6 py-2 text-xs md:text-sm font-black rounded-xl bg-amber-500 text-slate-950 shadow-lg transition' : 'px-6 py-2 text-xs md:text-sm font-black rounded-xl bg-slate-800 text-slate-300 shadow-lg transition';
+
+            const bannerImg = document.getElementById('gacha-banner-img');
+            const relicDisplay = document.getElementById('gacha-relic-display');
+            const bannerTag = document.getElementById('gacha-banner-tag');
+
+            if(type === 'char') {
+                bannerImg.classList.remove('hidden');
+                relicDisplay.classList.add('hidden');
+                bannerTag.innerText = 'PICK UP SSR 3.0%';
+                document.getElementById('gacha-banner-title').innerText = '【SSR】紅蓮の剣姫フレイア';
+                document.getElementById('gacha-banner-desc').innerText = '【火属性】圧倒的超火力！「クリムゾン・ブレイド」発動可能！';
+            } else {
+                bannerImg.classList.add('hidden');
+                relicDisplay.classList.remove('hidden');
+                relicDisplay.classList.add('flex');
+                bannerTag.innerText = 'SSR EQUIPMENT PICK UP';
+                document.getElementById('gacha-banner-title').innerText = 'レリック・神器召喚';
+                document.getElementById('gacha-banner-desc').innerText = '聖剣の欠片・イージスの盾・破滅の斧等、強力ステータス補正獲得！';
+            }
+        }
+
+        function addRelicToInventory(masterRelic) {
+            const newInst = {
+                instanceId: 'relic_inst_' + Date.now() + '_' + Math.floor(Math.random()*10000),
+                masterId: masterRelic.masterId,
+                name: masterRelic.name,
+                stat: masterRelic.stat,
+                val: masterRelic.val,
+                rarity: masterRelic.rarity,
+                img: masterRelic.img || null,
+                icon: masterRelic.icon || 'fa-shield-halved',
+                equippedToUnitId: null
+            };
+            playerData.relics.push(newInst);
+            return newInst;
+        }
+
+        function performGacha(count) {
+            const cost = count * 300;
+            if (playerData.gems < cost) { showCustomModal('ジュエル不足', 'ジュエルが不足しています。'); return; }
+
+            playerData.gems -= cost;
+            updateHeaderUI();
+
+            const modal = document.getElementById('gacha-modal');
+            const anim = document.getElementById('gacha-anim-container');
+            const results = document.getElementById('gacha-results');
+            const grid = document.getElementById('gacha-results-grid');
+
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            anim.classList.remove('hidden'); results.classList.add('hidden');
+            grid.innerHTML = '';
+
+            const pulled = [];
+            for (let i = 0; i < count; i++) {
+                if(currentGachaType === 'char') {
+                    const rand = Math.random() * 100;
+                    let id = 'iris';
+                    if (rand < 1.5) id = 'freya';
+                    else if (rand < 3.0) id = 'aquaria';
+                    else if (rand < 9.0) id = 'lumina';
+                    else if (rand < 15.0) id = 'veronica';
+                    else if (rand < 21.0) id = 'mylene';
+                    pulled.push({ type: 'char', item: MASTER_UNITS[id] });
+                } else {
+                    const rand = Math.random() * 100;
+                    let filtered = MASTER_RELICS.filter(r => r.rarity === 'N');
+                    if (rand < 5) filtered = MASTER_RELICS.filter(r => r.rarity === 'SSR');
+                    else if (rand < 25) filtered = MASTER_RELICS.filter(r => r.rarity === 'SR');
+                    else if (rand < 60) filtered = MASTER_RELICS.filter(r => r.rarity === 'R');
+
+                    const r = filtered[Math.floor(Math.random() * filtered.length)] || MASTER_RELICS[0];
+                    pulled.push({ type: 'equip', item: r });
+                }
+            }
+
+            setTimeout(() => {
+                anim.classList.add('hidden');
+                results.classList.remove('hidden');
+                results.classList.add('flex');
+                grid.className = count === 1 ? "flex justify-center items-center w-full mb-6" : "grid grid-cols-5 gap-3 w-full mb-6";
+
+                pulled.forEach(res => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-slate-900 border-2 border-amber-500/60 rounded-2xl p-2.5 flex flex-col items-center justify-center text-center shadow-xl';
+
+                    if (res.type === 'char') {
+                        const u = res.item;
+                        const isNew = !playerData.inventory[u.id];
+                        if (isNew) playerData.inventory[u.id] = { level: 1, awaken: 0, equippedRelicInstanceId: null };
+                        else playerData.crystals += 30;
+
+                        const rarityColor = u.rarity === 'SSR' ? 'text-amber-400 font-black' : (u.rarity === 'SR' ? 'text-purple-400 font-black' : 'text-blue-400 font-bold');
+                        card.innerHTML = `<span class="text-[10px] ${rarityColor}">${u.rarity}</span><img src="${u.image}" class="h-16 md:h-20 object-contain my-1"><span class="text-[10px] text-white truncate font-bold w-full">${u.name}</span>${!isNew ? '<span class="text-[9px] text-purple-300 font-bold mt-0.5">+30 クリスタル</span>' : '<span class="text-[9px] text-amber-300 font-bold mt-0.5">NEW!</span>'}`;
+                    } else {
+                        const rel = res.item;
+                        addRelicToInventory(rel);
+                        const rarityColor = rel.rarity === 'SSR' ? 'text-amber-400 font-black' : (rel.rarity === 'SR' ? 'text-purple-400 font-black' : 'text-blue-400 font-bold');
+                        const iconHtml = rel.img ? `<img src="${rel.img}" class="h-12 w-12 object-contain my-1">` : `<i class="fa-solid ${rel.icon || 'fa-shield-halved'} text-3xl my-2 text-amber-300"></i>`;
+                        card.innerHTML = `<span class="text-[10px] ${rarityColor}">${rel.rarity} 装備</span>${iconHtml}<span class="text-[10px] text-white font-bold w-full truncate">${rel.name}</span>`;
+                    }
+                    grid.appendChild(card);
+                });
+
+                updateHeaderUI();
+            }, 1500);
+        }
+
+        function closeGachaModal() {
+            document.getElementById('gacha-modal').classList.add('hidden');
+            document.getElementById('gacha-modal').classList.remove('flex');
+        }
+
+        function switchPartySubTab(sub) {
+            ['formation', 'enhance', 'relic'].forEach(s => {
+                document.getElementById(`tab-party-${s}`).className = sub === s ? 'px-6 py-2 text-sm font-bold border-b-2 border-amber-400 text-amber-400' : 'px-6 py-2 text-sm font-bold border-b-2 border-transparent text-slate-400';
+                document.getElementById(`subview-${s}`).style.display = sub === s ? 'block' : 'none';
+            });
+            if (sub === 'enhance') renderEnhanceUI();
+            if (sub === 'relic') renderRelicUI();
+        }
+
+        function renderPartyUI() {
+            const partyContainer = document.getElementById('party-slots-container');
+            partyContainer.innerHTML = '';
+
+            for (let i = 0; i < 3; i++) {
+                const unitId = playerData.party[i];
+                const unitSlot = document.createElement('div');
+
+                if (unitId && MASTER_UNITS[unitId]) {
+                    const unit = MASTER_UNITS[unitId];
+                    const inv = playerData.inventory[unitId];
+                    unitSlot.className = 'relative aspect-[4/3] bg-slate-900 border-2 border-amber-500/50 rounded-2xl p-2.5 flex items-center space-x-2 shadow-xl';
+                    unitSlot.innerHTML = `
+                        <button onclick="removeFromParty(${i})" class="absolute top-2 right-2 bg-slate-950/80 text-slate-300 w-5 h-5 rounded-full text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                        <img src="${unit.image}" class="h-full w-16 object-contain">
+                        <div class="overflow-hidden">
+                            <div class="text-xs font-bold text-white truncate">${unit.name}</div>
+                            <div class="text-[10px] text-slate-400">Lv.${inv.level} | 覚醒★${inv.awaken}</div>
+                        </div>
+                    `;
+                } else {
+                    unitSlot.className = 'bg-slate-900/60 border-2 border-dashed border-slate-700 rounded-2xl p-2 flex items-center justify-center';
+                    unitSlot.innerHTML = `<span class="text-xs text-slate-500 font-bold">空き枠</span>`;
+                }
+                partyContainer.appendChild(unitSlot);
+            }
+
+            const rosterGrid = document.getElementById('roster-grid');
+            rosterGrid.innerHTML = '';
+            Object.keys(playerData.inventory).forEach(unitId => {
+                const unit = MASTER_UNITS[unitId];
+                const inParty = playerData.party.includes(unitId);
+                const card = document.createElement('div');
+                card.className = `bg-slate-900 border rounded-2xl p-2 flex flex-col items-center cursor-pointer ${inParty ? 'opacity-40 border-slate-800' : 'border-amber-500/40'}`;
+                card.onclick = () => { if (!inParty) addToParty(unitId); };
+                card.innerHTML = `<img src="${unit.image}" class="h-16 object-contain"><span class="text-[9px] font-bold text-slate-200 truncate w-full text-center">${unit.name}</span>`;
+                rosterGrid.appendChild(card);
+            });
+        }
+
+        function addToParty(unitId) {
+            const emptyIdx = playerData.party.findIndex(slot => slot === null);
+            if (emptyIdx !== -1) { playerData.party[emptyIdx] = unitId; renderPartyUI(); }
+        }
+        function removeFromParty(index) { playerData.party[index] = null; renderPartyUI(); }
+
+        /* FIXED ENHANCEMENT & AWAKENING FUNCTIONALITY */
+        function renderEnhanceUI() {
+            const list = document.getElementById('enhance-unit-list');
+            list.innerHTML = '';
+
+            Object.keys(playerData.inventory).forEach(unitId => {
+                const unit = MASTER_UNITS[unitId];
+                const inv = playerData.inventory[unitId];
+
+                const maxLevel = 30 + (inv.awaken * 10);
+                const isMaxLv = inv.level >= maxLevel;
+
+                const lvlCostGems = inv.level * 50;
+                const awakenCostCrystals = (inv.awaken + 1) * 30;
+
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900 border border-slate-800 rounded-2xl p-3 flex justify-between items-center space-x-3 shadow-lg';
+                card.innerHTML = `
+                    <img src="${unit.image}" class="h-20 w-16 object-contain">
+                    <div class="flex-1 overflow-hidden">
+                        <div class="text-xs font-black text-white truncate">${unit.name}</div>
+                        <div class="text-[10px] text-amber-300 font-bold mt-0.5">Lv. ${inv.level} / ${maxLevel} | 覚醒: ★${inv.awaken}</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">HP: ${unit.baseHp + (inv.level * 25) + (inv.awaken * 150)} | ATK: ${unit.baseAtk + (inv.level * 8) + (inv.awaken * 50)}</div>
+                    </div>
+                    <div class="flex flex-col space-y-1.5 shrink-0">
+                        <button onclick="levelUpUnit('${unitId}')" ${isMaxLv ? 'disabled' : ''} class="${isMaxLv ? 'bg-slate-800 text-slate-500' : 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 hover:from-amber-400 hover:to-yellow-300'} text-[10px] font-black px-3 py-1.5 rounded-lg shadow transition">
+                            ${isMaxLv ? 'Lv.MAX' : `レベルUP (${lvlCostGems}G)`}
+                        </button>
+                        <button onclick="awakenUnit('${unitId}')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow transition">
+                            覚醒 (${awakenCostCrystals} C)
+                        </button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function levelUpUnit(unitId) {
+            const inv = playerData.inventory[unitId];
+            const maxLevel = 30 + (inv.awaken * 10);
+            if (inv.level >= maxLevel) {
+                showCustomModal('レベル上限', '現在の覚醒段階でのレベル上限に達しています。先に覚醒を行ってください！');
+                return;
+            }
+            const cost = inv.level * 50;
+            if (playerData.gems < cost) {
+                showCustomModal('ジュエル不足', 'レベルアップに必要なジュエルが不足しています。');
+                return;
+            }
+            playerData.gems -= cost;
+            inv.level += 1;
+            updateHeaderUI();
+            renderEnhanceUI();
+            renderPartyUI();
+            playSE('skill');
+        }
+
+        function awakenUnit(unitId) {
+            const inv = playerData.inventory[unitId];
+            const costCrystals = (inv.awaken + 1) * 30;
+            if (playerData.crystals < costCrystals) {
+                showCustomModal('クリスタル不足', `覚醒に必要なクリスタルが不足しています。\n(必要: ${costCrystals} / 所持: ${playerData.crystals})\nガチャでキャラが重複した際に獲得できます。`);
+                return;
+            }
+            playerData.crystals -= costCrystals;
+            inv.awaken += 1;
+            updateHeaderUI();
+            renderEnhanceUI();
+            renderPartyUI();
+            playSE('skill');
+            showCustomModal('覚醒完了！', `${MASTER_UNITS[unitId].name} が ★${inv.awaken} に覚醒しました！\nレベル上限が突破され、ステータスが大幅強化されました！`);
+        }
+
+        let selectedRelicUnit = null;
+        function renderRelicUI() {
+            const uContainer = document.getElementById('relic-unit-select');
+            uContainer.innerHTML = '';
+            
+            const ownedUnitIds = Object.keys(playerData.inventory);
+            if (ownedUnitIds.length > 0 && !selectedRelicUnit) {
+                selectedRelicUnit = ownedUnitIds[0];
+            }
+
+            ownedUnitIds.forEach(id => {
+                const u = MASTER_UNITS[id];
+                const inv = playerData.inventory[id];
+                const equippedRelic = playerData.relics.find(r => r.instanceId === inv.equippedRelicInstanceId);
+
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left p-2 rounded-xl border text-xs font-bold flex justify-between items-center ${selectedRelicUnit === id ? 'bg-amber-500/20 border-amber-400 text-amber-300' : 'bg-slate-950 border-slate-800 text-slate-300'}`;
+                btn.onclick = () => { selectedRelicUnit = id; renderRelicUI(); };
+                btn.innerHTML = `<span>${u.name}</span><span class="text-[10px] ${equippedRelic ? 'text-amber-400' : 'text-slate-500'}">${equippedRelic ? equippedRelic.name : '未装備'}</span>`;
+                uContainer.appendChild(btn);
+            });
+
+            const rContainer = document.getElementById('relic-inventory-grid');
+            rContainer.innerHTML = '';
+
+            if (playerData.relics.length === 0) {
+                rContainer.innerHTML = '<div class="text-xs text-slate-500 col-span-2 text-center py-4">所持している装備はありません。</div>';
+                return;
+            }
+
+            playerData.relics.forEach(relic => {
+                const card = document.createElement('div');
+                const isEquipped = !!relic.equippedToUnitId;
+                const equippedUnitName = isEquipped ? MASTER_UNITS[relic.equippedToUnitId]?.name : null;
+                const isEquippedBySelected = isEquipped && relic.equippedToUnitId === selectedRelicUnit;
+
+                card.className = `bg-slate-950 border ${isEquippedBySelected ? 'border-amber-400' : 'border-slate-800'} rounded-xl p-2.5 flex justify-between items-center text-xs`;
+                
+                let actionBtnHtml = '';
+                if (isEquippedBySelected) {
+                    actionBtnHtml = `<button onclick="unequipRelic('${selectedRelicUnit}')" class="bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-black px-2.5 py-1 rounded">外す</button>`;
+                } else if (isEquipped) {
+                    actionBtnHtml = `<span class="text-[9px] text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800 truncate max-w-[80px]" title="${equippedUnitName}">${equippedUnitName}装備中</span>`;
+                } else {
+                    actionBtnHtml = `<button onclick="equipRelic('${relic.instanceId}')" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-[10px] font-black px-2.5 py-1 rounded">装備</button>`;
+                }
+
+                const iconHtml = relic.img ? `<img src="${relic.img}" class="h-8 w-8 object-contain">` : `<i class="fa-solid ${relic.icon || 'fa-shield-halved'} text-amber-400 text-lg"></i>`;
+
+                card.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        ${iconHtml}
+                        <div>
+                            <div class="font-bold text-amber-300 flex items-center space-x-1">
+                                <span>${relic.name}</span>
+                                <span class="text-[9px] font-extrabold px-1 rounded bg-slate-800 text-slate-400">${relic.rarity}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400">${relic.stat.toUpperCase()} +${relic.val}</div>
+                        </div>
+                    </div>
+                    <div>${actionBtnHtml}</div>
+                `;
+                rContainer.appendChild(card);
+            });
+        }
+
+        function equipRelic(instanceId) {
+            if (!selectedRelicUnit) return;
+            const relic = playerData.relics.find(r => r.instanceId === instanceId);
+            if (!relic || relic.equippedToUnitId) return;
+
+            const currentRelicId = playerData.inventory[selectedRelicUnit].equippedRelicInstanceId;
+            if (currentRelicId) {
+                const prev = playerData.relics.find(r => r.instanceId === currentRelicId);
+                if (prev) prev.equippedToUnitId = null;
+            }
+
+            playerData.inventory[selectedRelicUnit].equippedRelicInstanceId = instanceId;
+            relic.equippedToUnitId = selectedRelicUnit;
+
+            showCustomModal('装備完了', `${MASTER_UNITS[selectedRelicUnit].name} に 【${relic.name}】 を装備しました！`);
+            renderRelicUI();
+        }
+
+        function unequipRelic(unitId) {
+            const instanceId = playerData.inventory[unitId].equippedRelicInstanceId;
+            if (instanceId) {
+                const relic = playerData.relics.find(r => r.instanceId === instanceId);
+                if (relic) relic.equippedToUnitId = null;
+                playerData.inventory[unitId].equippedRelicInstanceId = null;
+            }
+            renderRelicUI();
+        }
+
+        function renderQuests() {
+            const qList = document.getElementById('quest-list');
+            qList.innerHTML = '';
+
+            QUESTS.forEach((q, idx) => {
+                const isUnlocked = q.chapter === 1 || playerData.clearedQuests.includes(QUESTS[idx - 1]?.id);
+                const isCleared = playerData.clearedQuests.includes(q.id);
+
+                const card = document.createElement('div');
+                card.className = `border rounded-2xl p-4 flex flex-col justify-between shadow-xl ${isUnlocked ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-950 border-slate-900 opacity-50'}`;
+                
+                let descText = '複数敵の群れが出現！貴重なレリックもドロップ！';
+                if (q.chapter === 6) descText = '※ ラスボス「魔王ルシフェリア」が立ち塞がる！';
+                if (q.chapter === 7) descText = '※ 最凶の真ボス「滅世竜バハムート」降臨！';
+                if (q.chapter === 8) descText = '※ 虚無より出でし「虚無竜クロノス」降臨！';
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-bold ${q.chapter >= 7 ? 'text-purple-400 font-black' : 'text-indigo-400'}">CHAPTER ${q.chapter}</span>
+                            ${isCleared ? '<span class="text-[9px] bg-emerald-600 text-white font-bold px-1.5 py-0.5 rounded">CLEAR</span>' : ''}
+                        </div>
+                        <div class="text-base font-extrabold text-white mt-1">${q.name}</div>
+                    </div>
+                    <div class="text-xs text-slate-400 my-2">${descText}</div>
+                    ${isUnlocked ? 
+                        `<button onclick="triggerQuestDeparture(${q.id})" class="w-full gold-gradient gold-gradient-hover text-slate-950 text-xs font-black py-2 rounded-xl">出撃 (${q.ap} AP)</button>` : 
+                        `<div class="text-xs text-rose-400 font-bold text-center py-2 bg-slate-950 rounded-xl border border-rose-950">※ 前の章をクリアで解放</div>`
+                    }
+                `;
+                qList.appendChild(card);
+            });
+        }
+
+        function triggerQuestDeparture(questId) {
+            const quest = QUESTS.find(q => q.id === questId);
+            const activeParty = playerData.party.filter(id => id !== null);
+            if (activeParty.length === 0) { showCustomModal('編成エラー', 'パーティを編成してください。'); return; }
+            if (playerData.ap < quest.ap) { 
+                showConfirmModal('AP不足', `APが不足しています。(消費AP: ${quest.ap} / 現在: ${playerData.ap})\n\nジュエル 50 個でAPを回復しますか？`, () => {
+                    if (playerData.gems < 50) {
+                        showCustomModal('ジュエル不足', 'ジュエルが不足しています。');
+                        return;
+                    }
+                    playerData.gems -= 50;
+                    playerData.ap = playerData.maxAp;
+                    updateHeaderUI();
+                    showCustomModal('回復完了', 'APを回復しました！');
+                }); 
+                return; 
+            }
+
+            playerData.ap -= quest.ap;
+            updateHeaderUI();
+            
+            isCurrentStageClearedBefore = playerData.clearedQuests.includes(quest.id);
+            startBattle(quest, activeParty);
+        }
+
+        function renderTowerUI() {
+            document.getElementById('tower-floor-display').innerText = playerData.towerFloor;
+            document.getElementById('tower-target-floor').innerText = playerData.towerFloor;
+
+            const floor = playerData.towerFloor;
+            const isChronosFloor = floor >= 48;
+            const isBahamutFloor = !isChronosFloor && (floor >= 45 || (floor % 10 === 5 && floor >= 25));
+            const isLuciferiaFloor = !isChronosFloor && !isBahamutFloor && (floor % 10 === 0 || floor >= 40);
+
+            let enemyName = '階層守護竜';
+            let attr = '火/水/風';
+            if (isChronosFloor) { enemyName = '虚無竜クロノス'; attr = '闇'; }
+            else if (isBahamutFloor) { enemyName = '滅世竜バハムート'; attr = '火'; }
+            else if (isLuciferiaFloor) { enemyName = '魔王ルシフェリア'; attr = '闇'; }
+
+            const enemyInfoText = `ボス: ${enemyName} | 属性: ${attr} | 推奨戦闘力: ${800 + (floor * 150)}`;
+            document.getElementById('tower-enemy-info').innerText = enemyInfoText;
+        }
+
+        function startTowerChallenge() {
+            const activeParty = playerData.party.filter(id => id !== null);
+            if (activeParty.length === 0) { showCustomModal('エラー', '出撃パーティを編成してください。'); return; }
+
+            const floor = playerData.towerFloor;
+            const isChronosFloor = floor >= 48;
+            const isBahamutFloor = !isChronosFloor && (floor >= 45 || (floor % 10 === 5 && floor >= 25));
+            const isLuciferiaFloor = !isChronosFloor && !isBahamutFloor && (floor % 10 === 0 || floor >= 40);
+
+            let enemyType = 'dragon';
+            let enemyName = `階層守護竜`;
+            if (isChronosFloor) { enemyType = 'chronos'; enemyName = '虚無竜クロノス'; }
+            else if (isBahamutFloor) { enemyType = 'bahamut'; enemyName = '滅世竜バハムート'; }
+            else if (isLuciferiaFloor) { enemyType = 'luciferia'; enemyName = '魔王・深淵のルシフェリア'; }
+
+            const towerQuest = {
+                id: 999, name: `タワー第 ${floor} 階層`, ap: 0, rewardGems: 300,
+                waves: [{
+                    enemies: [{
+                        type: enemyType,
+                        name: enemyName,
+                        hp: 1200 + (floor * 320),
+                        atk: 60 + (floor * 16),
+                        isBoss: true
+                    }]
+                }]
+            };
+            
+            isCurrentStageClearedBefore = playerData.clearedTowerFloors.includes(floor);
+            startBattle(towerQuest, activeParty);
+        }
+
+        let currentBattle = null;
+
+        function startBattle(quest, activeParty) {
+            battleSpeed = 1;
+            document.getElementById('speed-status').innerText = '1x';
+
+            currentBattle = {
+                quest: quest, currentWaveIdx: 0, totalWaves: quest.waves.length, enemies: [],
+                party: activeParty.map(id => {
+                    const m = MASTER_UNITS[id];
+                    const inv = playerData.inventory[id];
+                    
+                    let bonusAtk = (inv.level * 8) + (inv.awaken * 50);
+                    let bonusHp = (inv.level * 25) + (inv.awaken * 150);
+                    if (inv.equippedRelicInstanceId) {
+                        const r = playerData.relics.find(rel => rel.instanceId === inv.equippedRelicInstanceId);
+                        if (r) {
+                            if (r.stat === 'atk') bonusAtk += r.val;
+                            if (r.stat === 'hp') bonusHp += r.val;
+                        }
+                    }
+
+                    return { id: id, name: m.name, image: m.image, maxHp: m.baseHp + bonusHp, hp: m.baseHp + bonusHp, atk: m.baseAtk + bonusAtk, skillGauge: 0, skillName: m.skillName };
+                }),
+                isAuto: false, inProgress: true
+            };
+
+            switchTab('battle');
+            initPartyDeck();
+            loadWave(0);
+        }
+
+        function initPartyDeck() {
+            const partyRow = document.getElementById('battle-party-row');
+            partyRow.innerHTML = '';
+            const skillButtonsRow = document.getElementById('battle-skill-buttons');
+            skillButtonsRow.innerHTML = '';
+
+            currentBattle.party.forEach((unit, idx) => {
+                const avatar = document.createElement('div');
+                avatar.className = 'flex flex-col items-center space-y-1 relative z-20';
+                avatar.innerHTML = `
+                    <div class="w-48 md:w-64 bg-slate-900/95 border border-slate-700/80 rounded-lg p-2 md:p-2.5 backdrop-blur mb-1 text-center shadow-xl">
+                        <div class="battle-name-ui text-white">${unit.name}</div>
+                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden my-0.5 border border-slate-800">
+                            <div id="unit-hp-bar-${idx}" class="bg-emerald-500 h-full w-full transition-all"></div>
+                        </div>
+                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                            <div id="unit-sp-bar-${idx}" class="bg-amber-400 h-full w-0 transition-all"></div>
+                        </div>
+                    </div>
+                    <img src="${unit.image}" class="h-20 md:h-28 object-contain drop-shadow-[0_8px_12px_rgba(0,0,0,0.8)]">
+                `;
+                partyRow.appendChild(avatar);
+
+                const btn = document.createElement('button');
+                btn.id = `skill-btn-${idx}`;
+                btn.onclick = () => triggerUnitSkill(idx);
+                btn.className = 'bg-slate-800 border border-slate-700 rounded-xl p-1.5 md:p-2 text-[10px] md:text-xs font-bold text-slate-400 opacity-50 transition-all flex flex-col items-center justify-center leading-tight break-words h-full min-h-[3.2rem] text-center shadow';
+                btn.disabled = true;
+                btn.innerHTML = `<span>${unit.skillName}</span>`;
+                skillButtonsRow.appendChild(btn);
+            });
+        }
+
+        function updatePartyBarsUI() {
+            if(!currentBattle) return;
+            currentBattle.party.forEach((unit, idx) => {
+                const hpBar = document.getElementById(`unit-hp-bar-${idx}`);
+                const spBar = document.getElementById(`unit-sp-bar-${idx}`);
+                if (hpBar) hpBar.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`;
+                if (spBar) spBar.style.width = `${Math.min(100, unit.skillGauge)}%`;
+            });
+        }
+
+        /* SUPPORT MULTIPLE ENEMIES SIDE BY SIDE */
+        function loadWave(waveIdx) {
+            if (!currentBattle || !currentBattle.inProgress) return;
+            currentBattle.currentWaveIdx = waveIdx;
+            const waveData = currentBattle.quest.waves[waveIdx];
+
+            currentBattle.enemies = waveData.enemies.map(e => {
+                const meta = ENEMY_TYPES[e.type] || ENEMY_TYPES['slime'];
+                return {
+                    name: e.name || meta.name,
+                    maxHp: e.hp,
+                    hp: e.hp,
+                    atk: e.atk,
+                    spriteClass: meta.spriteClass,
+                    element: meta.element,
+                    isBoss: !!e.isBoss
+                };
+            });
+
+            document.getElementById('battle-wave-text').innerText = `${waveIdx + 1} / ${currentBattle.totalWaves}`;
+            renderEnemiesRow();
+            updatePartyBarsUI();
+            startTurnLoop();
+        }
+
+        function renderEnemiesRow() {
+            const container = document.getElementById('enemies-row');
+            container.innerHTML = '';
+
+            currentBattle.enemies.forEach((enemy, idx) => {
+                if (enemy.hp <= 0) return;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'relative flex flex-col items-center justify-end';
+                wrapper.id = `enemy-wrapper-${idx}`;
+
+                const badgeClass = `badge-${enemy.element || 'fire'}`;
+                const elemText = enemy.element === 'water' ? '水' : (enemy.element === 'wind' ? '風' : (enemy.element === 'dark' ? '闇' : (enemy.element === 'light' ? '光' : '火')));
+
+                wrapper.innerHTML = `
+                    <div class="w-28 md:w-36 bg-slate-900/95 border border-slate-700 rounded-xl p-1.5 mb-2 backdrop-blur-md shadow-2xl z-20 text-center">
+                        <div class="flex justify-between items-center text-[9px] px-1 text-slate-200 font-bold mb-0.5">
+                            <span class="px-1 py-0.2 rounded font-black ${badgeClass}">${elemText}</span>
+                            <span class="battle-enemy-name-ui font-black text-slate-100">${enemy.name}</span>
+                        </div>
+                        <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                            <div id="enemy-hp-bar-${idx}" class="bg-gradient-to-r from-rose-600 to-amber-400 h-full w-full transition-all duration-300"></div>
+                        </div>
+                    </div>
+                    <div class="enemy-sprite ${enemy.spriteClass} ${enemy.isBoss ? 'is-boss' : ''}"></div>
+                `;
+                container.appendChild(wrapper);
+                updateSingleEnemyHpUI(idx);
+            });
+        }
+
+        function updateSingleEnemyHpUI(idx) {
+            const enemy = currentBattle.enemies[idx];
+            if (!enemy) return;
+            const bar = document.getElementById(`enemy-hp-bar-${idx}`);
+            if (bar) bar.style.width = `${Math.max(0, (enemy.hp / enemy.maxHp) * 100)}%`;
+        }
+
+        function showDamageNumberOnEnemy(enemyIdx, amount, isCritical = false) {
+            const wrapper = document.getElementById(`enemy-wrapper-${enemyIdx}`);
+            if (!wrapper) return;
+
+            const dmgEl = document.createElement('div');
+            dmgEl.className = 'damage-number';
+            
+            const offsetX = (Math.random() - 0.5) * 40;
+            dmgEl.style.left = `calc(50% + ${offsetX}px)`;
+            dmgEl.style.top = `20%`;
+
+            if (isCritical) {
+                dmgEl.className += ' text-amber-300 text-3xl md:text-4xl z-40';
+                dmgEl.innerText = `${amount}!`;
+            } else {
+                dmgEl.className += ' text-rose-500 text-2xl md:text-3xl z-40';
+                dmgEl.innerText = amount;
+            }
+
+            wrapper.appendChild(dmgEl);
+
+            setTimeout(() => {
+                if (dmgEl.parentNode) dmgEl.parentNode.removeChild(dmgEl);
+            }, 800);
+        }
+
+        function toggleSpeed() {
+            if (!isCurrentStageClearedBefore) {
+                showCustomModal('倍速制限', '倍速機能は一度クリアしたことのあるステージでのみ解放されます！');
+                return;
+            }
+            battleSpeed = battleSpeed === 1 ? 2 : (battleSpeed === 2 ? 3 : 1);
+            document.getElementById('speed-status').innerText = `${battleSpeed}x`;
+        }
+
+        function toggleAutoBattle() {
+            if(!currentBattle) return;
+            currentBattle.isAuto = !currentBattle.isAuto;
+            document.getElementById('auto-status').innerText = currentBattle.isAuto ? 'ON' : 'OFF';
+            document.getElementById('auto-status').className = currentBattle.isAuto ? 'text-emerald-400 font-extrabold' : 'text-rose-400 font-extrabold';
+        }
+
+        function startTurnLoop() {
+            if (!currentBattle || !currentBattle.inProgress) return;
+            const delay = 1000 / battleSpeed;
+
+            setTimeout(() => {
+                if (!currentBattle || !currentBattle.inProgress) return;
+
+                const aliveEnemies = currentBattle.enemies.filter(e => e.hp > 0);
+                if (aliveEnemies.length === 0) { handleEnemyKilled(); return; }
+
+                currentBattle.party.forEach((unit, idx) => {
+                    const targets = currentBattle.enemies.map((e, i) => ({ enemy: e, index: i })).filter(item => item.enemy.hp > 0);
+                    if (unit.hp > 0 && targets.length > 0) {
+                        const targetItem = targets[Math.floor(Math.random() * targets.length)];
+                        let dmg = Math.floor(unit.atk * (0.85 + Math.random() * 0.3));
+                        targetItem.enemy.hp -= dmg;
+                        
+                        unit.skillGauge = Math.min(100, unit.skillGauge + 25);
+                        playSE('hit');
+                        showDamageNumberOnEnemy(targetItem.index, dmg, false);
+                        updateSingleEnemyHpUI(targetItem.index);
+                        updatePartyBarsUI();
+
+                        if (targetItem.enemy.hp <= 0) {
+                            renderEnemiesRow();
+                        }
+
+                        const btn = document.getElementById(`skill-btn-${idx}`);
+                        if (unit.skillGauge >= 100) {
+                            btn.className = 'gold-gradient text-slate-950 font-black rounded-xl p-1.5 md:p-2 text-[10px] md:text-xs shadow-xl animate-pulse flex flex-col items-center justify-center leading-tight break-words h-full min-h-[3.2rem] text-center';
+                            btn.disabled = false;
+                            if (currentBattle.isAuto) triggerUnitSkill(idx);
+                        }
+                    }
+                });
+
+                if (currentBattle.enemies.every(e => e.hp <= 0)) { handleEnemyKilled(); return; }
+
+                setTimeout(() => {
+                    if (!currentBattle || !currentBattle.inProgress) return;
+                    const remainingEnemies = currentBattle.enemies.filter(e => e.hp > 0);
+                    const aliveParty = currentBattle.party.filter(u => u.hp > 0);
+
+                    if (remainingEnemies.length > 0 && aliveParty.length > 0) {
+                        remainingEnemies.forEach(e => {
+                            const target = aliveParty[Math.floor(Math.random() * aliveParty.length)];
+                            target.hp -= Math.floor(e.atk * 0.8);
+                        });
+                        updatePartyBarsUI();
+                        if (currentBattle.party.every(u => u.hp <= 0)) { handleDefeat(); return; }
+                    }
+                    startTurnLoop();
+                }, delay);
+
+            }, delay);
+        }
+
+        function triggerUnitSkill(idx) {
+            const unit = currentBattle.party[idx];
+            if (!unit || unit.skillGauge < 100) return;
+
+            const aliveTargets = currentBattle.enemies.map((e, i) => ({ enemy: e, index: i })).filter(item => item.enemy.hp > 0);
+            if (aliveTargets.length === 0) return;
+
+            unit.skillGauge = 0;
+            const btn = document.getElementById(`skill-btn-${idx}`);
+            btn.className = 'bg-slate-800 border border-slate-700 rounded-xl p-1.5 md:p-2 text-[10px] md:text-xs font-bold text-slate-400 opacity-50 flex flex-col items-center justify-center leading-tight break-words h-full min-h-[3.2rem] text-center';
+            btn.disabled = true;
+
+            playSE('skill');
+
+            /* ALL TARGET AOE SKILL DAMAGE */
+            aliveTargets.forEach(item => {
+                let skillDmg = Math.floor(unit.atk * 3.0);
+                item.enemy.hp -= skillDmg;
+                showDamageNumberOnEnemy(item.index, skillDmg, true);
+                updateSingleEnemyHpUI(item.index);
+            });
+
+            updatePartyBarsUI();
+            
+            if (currentBattle.enemies.every(e => e.hp <= 0)) {
+                setTimeout(handleEnemyKilled, 400);
+            } else {
+                renderEnemiesRow();
+            }
+        }
+
+        function handleEnemyKilled() {
+            if (currentBattle.currentWaveIdx + 1 < currentBattle.totalWaves) {
+                setTimeout(() => loadWave(currentBattle.currentWaveIdx + 1), 600 / battleSpeed);
+            } else {
+                handleVictory();
+            }
+        }
+
+        function handleVictory() {
+            currentBattle.inProgress = false;
+            
+            if (currentBattle.quest.id === 999) {
+                if (!playerData.clearedTowerFloors.includes(playerData.towerFloor)) playerData.clearedTowerFloors.push(playerData.towerFloor);
+                playerData.towerFloor += 1;
+                playerData.gems += 300;
+                updateHeaderUI();
+                showCustomModal('タワー突破！', `階層をクリアしました！\n次回よりこの階層で【倍速】が利用可能です。`);
+                setTimeout(() => switchTab('tower'), 1200);
+                return;
+            }
+
+            if (!playerData.clearedQuests.includes(currentBattle.quest.id)) {
+                playerData.clearedQuests.push(currentBattle.quest.id);
+            }
+
+            let dropMsg = '';
+            if (Math.random() < 0.35) {
+                const droppedMaster = MASTER_RELICS[Math.floor(Math.random() * MASTER_RELICS.length)];
+                const droppedInst = addRelicToInventory(droppedMaster);
+                dropMsg = `\nレリックドロップ: 【${droppedInst.name}】を獲得！`;
+            }
+
+            playerData.gems += currentBattle.quest.rewardGems;
+            updateHeaderUI();
+
+            showCustomModal('VICTORY!', `クエストクリア！\n獲得ジュエル: +${currentBattle.quest.rewardGems}${dropMsg}\n次回より【倍速】が利用可能！`);
+            setTimeout(() => switchTab('quest'), 1400);
+        }
+
+        function handleDefeat() {
+            currentBattle.inProgress = false;
+            showCustomModal('DEFEAT...', '全滅しました。ユニットの強化・覚醒・レリック装備を行って再挑戦しましょう！');
+            setTimeout(() => switchTab('party'), 1200);
+        }
+
+        function retreatBattle() {
+            if (currentBattle) currentBattle.inProgress = false;
+            switchTab('quest');
+        }
+    </script>
+</body>
+</html>
