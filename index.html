@@ -383,6 +383,22 @@
                                 </button>
                                 <div class="text-[9px] text-slate-500 mt-2 leading-relaxed">友達の8文字コードを入力すると、サーバー上でフレンド申請できます。相手の名前はサーバーから取得します。</div>
                             </div>
+
+                            <div class="friend-card rounded-2xl p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-user-plus text-amber-400"></i>
+                                        <div class="text-xs font-black text-white">届いたフレンド申請</div>
+                                        <span id="friend-request-count" class="text-[10px] bg-amber-950 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full">0</span>
+                                    </div>
+                                    <button onclick="refreshFriendRequests(true)" class="text-[10px] text-slate-400 hover:text-white transition">
+                                        <i class="fa-solid fa-rotate-right mr-1"></i>更新
+                                    </button>
+                                </div>
+                                <div id="friend-requests-list" class="space-y-2">
+                                    <div class="text-[10px] text-slate-500 text-center py-3">申請を確認中…</div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="md:col-span-2">
@@ -1078,7 +1094,7 @@
             if(tabId === 'quest') renderQuests();
             if(tabId === 'party') renderPartyUI();
             if(tabId === 'tower') renderTowerUI();
-            if(tabId === 'friends') { renderFriendsUI(); refreshOnlineFriends(false); }
+            if(tabId === 'friends') { renderFriendsUI(); refreshOnlineFriends(false); refreshFriendRequests(false); }
         }
 
         function getFriendApiUrl() {
@@ -1244,6 +1260,72 @@
                 return false;
             } finally {
                 friendOnlineBusy = false;
+            }
+        }
+
+        async function refreshFriendRequests(showErrors = false) {
+            const countEl = document.getElementById('friend-request-count');
+            const listEl = document.getElementById('friend-requests-list');
+            if (!countEl || !listEl || !getFriendApiUrl()) return false;
+
+            try {
+                await registerOnlineAccount(false);
+                const data = await friendApi('/requests');
+                const requests = Array.isArray(data.requests) ? data.requests : [];
+                countEl.innerText = requests.length;
+
+                if (requests.length === 0) {
+                    listEl.innerHTML = '<div class="text-[10px] text-slate-500 text-center py-3">届いている申請はありません。</div>';
+                    return true;
+                }
+
+                listEl.innerHTML = requests.map((req, index) => `
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-700 flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-user text-white text-xs"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-xs font-black text-white truncate">${escapeHtml(req.name || '召喚士')}</div>
+                                <div class="text-[9px] text-slate-500 font-mono">${escapeHtml(req.friend_code || '')}</div>
+                            </div>
+                            <button onclick="acceptFriendRequest('${escapeHtml(req.id)}')"
+                                class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black transition">
+                                承認
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                return true;
+            } catch (e) {
+                countEl.innerText = '0';
+                listEl.innerHTML = '<div class="text-[10px] text-rose-400 text-center py-3">申請を取得できませんでした。</div>';
+                if (showErrors) {
+                    showCustomModal('申請取得エラー', e?.data?.message || e?.data?.error || 'フレンド申請の取得に失敗しました。');
+                }
+                return false;
+            }
+        }
+
+        async function acceptFriendRequest(requesterId) {
+            if (!requesterId) return;
+            try {
+                setFriendOnlineStatus('承認中…', true);
+                if (!await registerOnlineAccount(true)) return;
+
+                await friendApi('/accept', {
+                    method: 'POST',
+                    body: JSON.stringify({ requesterId: String(requesterId) })
+                });
+
+                await refreshOnlineFriends(false);
+                await refreshFriendRequests(false);
+                setFriendOnlineStatus('オンライン', true);
+                playSE('heal');
+                showCustomModal('フレンド承認', 'フレンド申請を承認しました。');
+            } catch (e) {
+                setFriendOnlineStatus('接続失敗', false);
+                showCustomModal('承認エラー', e?.data?.message || e?.data?.error || 'フレンド申請の承認に失敗しました。');
             }
         }
 
