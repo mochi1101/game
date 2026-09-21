@@ -1154,6 +1154,10 @@
                         if (data.player.id) playerData.onlinePlayerId = String(data.player.id);
                         saveData();
                     }
+                    await friendApi('/profile', {
+                        method: 'POST',
+                        body: JSON.stringify({ name: playerData.name || '召喚士', level: Number(playerData.level) || 1, combatPower: getPartyCombatPower(), leaderUnit: String(playerData.party?.find(id => id && playerData.inventory?.[id]) || '') })
+                    });
                     setFriendOnlineStatus('オンライン', true);
                     return true;
                 } catch (e) {
@@ -1166,7 +1170,7 @@
                 const res = await fetch(`${base}/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: playerData.name || '召喚士' })
+                    body: JSON.stringify({ name: playerData.name || '召喚士', level: Number(playerData.level) || 1, combatPower: getPartyCombatPower(), leaderUnit: String(playerData.party?.find(id => id && playerData.inventory?.[id]) || '') })
                 });
                 const data = await res.json().catch(() => ({}));
                 if (!res.ok || !data.token || !data.playerId || !data.friendCode) {
@@ -1214,20 +1218,33 @@
                 return;
             }
 
-            listEl.innerHTML = friends.map((friend, index) => `
-                <div class="flex items-center gap-3 bg-slate-950/75 border border-slate-800 rounded-2xl p-3">
-                    <div class="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center shrink-0 shadow-lg">
-                        <i class="fa-solid fa-user text-white"></i>
+            listEl.innerHTML = friends.map((friend, index) => {
+                const lastSeen = friend.updatedAt ? new Date(friend.updatedAt).getTime() : 0;
+                const online = !!lastSeen && (Date.now() - lastSeen < 5 * 60 * 1000);
+                const leader = friend.leaderUnit ? MASTER_UNITS[friend.leaderUnit] : null;
+                const level = Number(friend.level) || 1;
+                const power = Number(friend.combatPower) || 0;
+                return `
+                <div class="bg-slate-950/75 border border-slate-800 rounded-2xl p-3">
+                    <div class="flex items-center gap-3">
+                        <div class="relative w-12 h-12 rounded-full bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center shrink-0 shadow-lg overflow-hidden">
+                            ${leader?.image ? `<img src="${escapeHtml(leader.image)}" class="w-full h-full object-contain">` : '<i class="fa-solid fa-user text-white"></i>'}
+                            <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-slate-950 ${online ? 'bg-emerald-400' : 'bg-slate-600'}"></span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="text-sm font-black text-white truncate">${escapeHtml(friend.name || 'フレンド')}</div>
+                                <span class="text-[9px] ${online ? 'text-emerald-300' : 'text-slate-500'} shrink-0">${online ? 'オンライン' : 'オフライン'}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Lv.${level}　⚔ ${power.toLocaleString()}</div>
+                            <div class="text-[9px] text-slate-500 mt-0.5 truncate">リーダー：${escapeHtml(leader?.name || '未設定')}　｜　${escapeHtml(friend.code || '')}</div>
+                        </div>
+                        <button onclick="removeFriend(${index})" class="w-9 h-9 rounded-xl bg-rose-950/70 border border-rose-800/50 text-rose-300 hover:text-white hover:bg-rose-900 transition shrink-0" title="フレンド削除">
+                            <i class="fa-solid fa-user-minus text-xs"></i>
+                        </button>
                     </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="text-sm font-black text-white truncate">${escapeHtml(friend.name || 'フレンド')}</div>
-                        <div class="text-[10px] text-slate-500 font-mono">ID: ${escapeHtml(friend.code)}</div>
-                    </div>
-                    <button onclick="removeFriend(${index})" class="w-9 h-9 rounded-xl bg-rose-950/70 border border-rose-800/50 text-rose-300 hover:text-white hover:bg-rose-900 transition" title="フレンド削除">
-                        <i class="fa-solid fa-user-minus text-xs"></i>
-                    </button>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
         function escapeHtml(value) {
@@ -1248,6 +1265,10 @@
                     id: String(f.id),
                     code: String(f.friend_code),
                     name: String(f.name || 'フレンド'),
+                    level: Number(f.level) || 1,
+                    combatPower: Number(f.combat_power) || 0,
+                    leaderUnit: String(f.leader_unit || ''),
+                    updatedAt: String(f.updated_at || ''),
                     addedAt: ''
                 })) : [];
                 saveData();
