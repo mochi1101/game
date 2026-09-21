@@ -108,6 +108,26 @@
             animation: float-damage 0.8s ease-out forwards;
         }
 
+        /* 画面シェイクアニメーション */
+        @keyframes screen-shake {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 6px); }
+            40% { transform: translate(6px, -4px); }
+            60% { transform: translate(-4px, -4px); }
+            80% { transform: translate(4px, 4px); }
+            100% { transform: translate(0, 0); }
+        }
+        .animate-shake { animation: screen-shake 0.3s ease-in-out; }
+
+        /* 必殺技カットイン */
+        @keyframes cutin-slide {
+            0% { transform: translateX(-100%) skewX(-12deg); opacity: 0; }
+            20% { transform: translateX(0%) skewX(-12deg); opacity: 1; }
+            80% { transform: translateX(0%) skewX(-12deg); opacity: 1; }
+            100% { transform: translateX(100%) skewX(-12deg); opacity: 0; }
+        }
+        .animate-cutin { animation: cutin-slide 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
         .nav-custom-img-icon {
             height: clamp(38px, 6vh, 52px);
             width: auto;
@@ -121,7 +141,6 @@
             transform: scale(1.12);
         }
 
-        /* Gacha Flashy FX */
         .gacha-bg-flash {
             background-image: url('lucid-origin_A_flashy_gacha_screen_background_for_a_mobile_game_inspired_by_the_art_styles_of-0.jpg');
             background-size: cover;
@@ -134,7 +153,6 @@
         }
         .animate-gacha-magic { animation: gacha-magic-pulse 3s infinite linear; }
 
-        /* Gacha: Expanded height & centered character image */
         #screen-gacha {
             padding: 12px clamp(12px, 3vw, 32px) 90px;
             overflow-y: auto !important;
@@ -210,7 +228,7 @@
                 </button>
                 <div class="bg-slate-800/90 border border-slate-700 rounded-full pl-2 sm:pl-3 pr-1 py-0.5 sm:py-1 flex items-center space-x-1 sm:space-x-2 shadow-inner text-[11px] sm:text-xs">
                     <i class="fa-solid fa-bolt text-amber-400 text-[10px] sm:text-xs"></i>
-                    <span id="player-ap" class="font-bold text-amber-300">50</span><span class="text-slate-500 text-[9px] sm:text-[10px]">/50</span>
+                    <span id="player-ap" class="font-bold text-amber-300">50</span><span class="text-slate-500 text-[9px] sm:text-[10px]">/<span id="player-max-ap">50</span></span>
                     <button onclick="confirmRecoverAP()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs transition shadow ml-0.5 sm:ml-1" title="AP回復">
                         <i class="fa-solid fa-plus text-[9px] sm:text-[10px]"></i>
                     </button>
@@ -267,16 +285,36 @@
                     </div>
                 </div>
 
-                <div class="w-full md:w-80 flex flex-col justify-between space-y-2 md:space-y-3 z-10 shrink-0 pb-2 md:pb-0">
-                    <div class="bg-slate-900/80 backdrop-blur-md border border-purple-500/40 rounded-2xl p-3 md:p-4 shadow-xl">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[10px] text-purple-400 font-extrabold tracking-widest uppercase">NEW BOSS CHRONOS</span>
-                            <span class="bg-purple-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full">CHAPTER 8</span>
+                <div class="w-full md:w-80 flex flex-col space-y-2 md:space-y-3 z-10 shrink-0 pb-2 md:pb-0">
+                    <!-- デイリーミッション＆ログインボーナスボタン -->
+                    <button onclick="openMissionsModal()" class="bg-gradient-to-r from-emerald-900/90 to-teal-900/90 border border-emerald-500/50 hover:border-emerald-400 rounded-2xl p-3 flex items-center justify-between shadow-xl transition active:scale-95">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-list-check text-emerald-400 text-2xl"></i>
+                            <div class="text-left">
+                                <div class="text-xs font-black text-white">デイリーミッション</div>
+                                <div class="text-[10px] text-emerald-300">ジュエルや素材を毎日GET！</div>
+                            </div>
                         </div>
-                        <div class="text-sm md:text-base font-black text-white">「虚無竜クロノス」降臨！</div>
-                        <p class="text-[11px] md:text-xs text-slate-300 mt-0.5 md:mt-1">クエスト第8章＆バベルタワー最深部(48F〜)に新たな暗黒竜が到来！</p>
-                        <button onclick="switchTab('quest')" class="w-full mt-2 md:mt-3 bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white text-xs font-black py-1.5 md:py-2 rounded-xl shadow-lg transform active:scale-95 transition">
-                            クエストへ挑戦
+                        <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+                    </button>
+
+                    <!-- レイドボスバナー -->
+                    <div class="bg-slate-900/80 backdrop-blur-md border border-rose-500/40 rounded-2xl p-3 md:p-4 shadow-xl">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] text-rose-400 font-extrabold tracking-widest uppercase">RAID EVENT</span>
+                            <span class="bg-rose-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full">全系共闘</span>
+                        </div>
+                        <div class="text-sm md:text-base font-black text-white">「終焉巨神ベヒモス」討伐戦</div>
+                        <div class="text-[10px] text-slate-300 mt-0.5">全プレイヤーの総ダメージで撃破せよ！</div>
+                        <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden my-2 border border-slate-800">
+                            <div id="raid-boss-hp-bar" class="bg-rose-500 h-full w-full transition-all"></div>
+                        </div>
+                        <div class="flex justify-between text-[9px] text-slate-400 font-mono mb-2">
+                            <span>BOSS HP</span>
+                            <span id="raid-boss-hp-text">10,000,000 / 10,000,000</span>
+                        </div>
+                        <button onclick="openRaidModal()" class="w-full bg-gradient-to-r from-rose-700 to-amber-600 hover:from-rose-600 hover:to-amber-500 text-white text-xs font-black py-1.5 md:py-2 rounded-xl shadow-lg transform active:scale-95 transition">
+                            レイド戦に参加
                         </button>
                     </div>
 
@@ -298,7 +336,7 @@
                 </div>
             </section>
 
-            <!-- GACHA (FIXED FREYA BANNER IMAGE CUT-OFF) -->
+            <!-- GACHA -->
             <section id="screen-gacha" class="view-screen absolute inset-0 hidden bg-gradient-to-b from-slate-950 via-purple-950/90 to-slate-950">
                 <div class="mx-auto w-full flex flex-col justify-start">
                     <div class="text-center shrink-0">
@@ -388,7 +426,7 @@
                     <div class="mb-3 md:mb-4 border-b border-slate-800 pb-2 flex justify-between items-end">
                         <div>
                             <h2 class="text-xl md:text-2xl font-black text-amber-400 font-cinzel">QUEST STAGES</h2>
-                            <p class="text-[10px] md:text-xs text-slate-400">各章をクリアして次章を解放！複数横並びで出現する強敵群を破れ！</p>
+                            <p class="text-[10px] md:text-xs text-slate-400">各章をクリアして次章を解放！属性相性を活かして敵を撃破せよ！</p>
                         </div>
                     </div>
 
@@ -426,7 +464,7 @@
                 <div class="max-w-5xl mx-auto">
                     <div class="flex border-b border-slate-800 mb-3 md:mb-4">
                         <button id="tab-party-formation" onclick="switchPartySubTab('formation')" class="px-3 md:px-6 py-2 text-xs md:text-sm font-bold border-b-2 border-amber-400 text-amber-400">パーティ編成</button>
-                        <button id="tab-party-enhance" onclick="switchPartySubTab('enhance')" class="px-3 md:px-6 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-400">覚醒・強化</button>
+                        <button id="tab-party-enhance" onclick="switchPartySubTab('enhance')" class="px-3 md:px-6 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-400">限界突破・強化</button>
                         <button id="tab-party-relic" onclick="switchPartySubTab('relic')" class="px-3 md:px-6 py-2 text-xs md:text-sm font-bold border-b-2 border-transparent text-slate-400">装備（レリック）</button>
                     </div>
 
@@ -444,7 +482,7 @@
 
                     <div id="subview-enhance" class="hidden space-y-3">
                         <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
-                            <span>ユニットのレベルアップ・覚醒（必要クリスタル: ガチャ重複などで獲得）</span>
+                            <span>ユニットの強化・限界突破・スキル強化</span>
                             <span class="text-purple-300 font-bold">所持クリスタル: <i class="fa-solid fa-crystal-ball text-xs"></i> <span id="enhance-crystal-count">0</span></span>
                         </div>
                         <div id="enhance-unit-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -468,7 +506,21 @@
 
             <!-- BATTLE ARENA -->
             <section id="screen-battle" class="view-screen absolute inset-0 hidden flex flex-col bg-slate-950 overflow-hidden">
-                <div class="relative flex-1 bg-cover bg-center flex flex-col justify-between p-2 md:p-5 border-b border-slate-800/80 overflow-hidden min-h-0" style="background-image: linear-gradient(to bottom, rgba(15,23,42,0.3), rgba(15,23,42,0.92)), url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1400&q=80');">
+                <!-- 必殺技カットインオーバーレイ -->
+                <div id="cutin-overlay" class="absolute inset-0 z-50 pointer-events-none hidden items-center justify-center overflow-hidden bg-slate-950/40 backdrop-blur-xs">
+                    <div id="cutin-banner" class="w-full bg-gradient-to-r from-amber-600 via-purple-700 to-indigo-900 border-y-4 border-amber-300 py-4 px-8 flex items-center justify-between shadow-2xl transform -skew-x-12">
+                        <div class="flex items-center space-x-4">
+                            <img id="cutin-img" src="" class="h-20 w-20 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]">
+                            <div>
+                                <div id="cutin-unit-name" class="text-xs text-amber-300 font-extrabold uppercase tracking-widest">UNIT NAME</div>
+                                <div id="cutin-skill-name" class="text-xl md:text-3xl font-black text-white font-cinzel italic tracking-wider drop-shadow-md">SKILL NAME</div>
+                            </div>
+                        </div>
+                        <div class="text-amber-300 text-3xl md:text-5xl font-black font-cinzel tracking-widest opacity-80">SPECIAL</div>
+                    </div>
+                </div>
+
+                <div id="battle-field" class="relative flex-1 bg-cover bg-center flex flex-col justify-between p-2 md:p-5 border-b border-slate-800/80 overflow-hidden min-h-0" style="background-image: linear-gradient(to bottom, rgba(15,23,42,0.3), rgba(15,23,42,0.92)), url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1400&q=80');">
                     
                     <!-- Enemy Header Block -->
                     <div class="w-full flex flex-col items-center pt-0.5 z-20 relative">
@@ -480,9 +532,7 @@
 
                     <!-- Multiple Enemies Sprites & Health Row -->
                     <div class="flex-1 relative flex items-center justify-center my-auto min-h-[140px] md:min-h-[180px] max-h-[300px] z-10 py-1 md:py-2 w-full max-w-4xl mx-auto overflow-hidden">
-                        <div id="enemies-row" class="flex justify-around items-end w-full px-2 sm:px-4 space-x-1 sm:space-x-2">
-                            <!-- Dynamically populated multiple enemy sprites -->
-                        </div>
+                        <div id="enemies-row" class="flex justify-around items-end w-full px-2 sm:px-4 space-x-1 sm:space-x-2"></div>
                     </div>
 
                     <!-- Party Units Row -->
@@ -533,10 +583,10 @@
         <div id="gacha-modal" class="fixed inset-0 gacha-bg-flash z-50 hidden flex-col items-center justify-center p-4 bg-slate-950/90">
             <div id="gacha-anim-container" class="flex flex-col items-center justify-center space-y-6">
                 <div class="relative w-36 h-36 md:w-48 md:h-48 flex items-center justify-center">
-                    <div class="absolute inset-0 rounded-full border-4 border-amber-300 border-t-purple-500 animate-gacha-magic"></div>
-                    <i class="fa-solid fa-sparkles text-4xl md:text-6xl text-amber-300 drop-shadow-[0_0_20px_rgba(252,211,77,0.9)] animate-pulse"></i>
+                    <div id="gacha-circle-fx" class="absolute inset-0 rounded-full border-4 border-amber-300 border-t-purple-500 animate-gacha-magic"></div>
+                    <i id="gacha-icon-fx" class="fa-solid fa-sparkles text-4xl md:text-6xl text-amber-300 drop-shadow-[0_0_20px_rgba(252,211,77,0.9)] animate-pulse"></i>
                 </div>
-                <div class="text-2xl md:text-3xl font-black text-gold font-cinzel tracking-widest animate-pulse drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">SUMMONING...</div>
+                <div id="gacha-text-fx" class="text-2xl md:text-3xl font-black text-gold font-cinzel tracking-widest animate-pulse drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">SUMMONING...</div>
             </div>
 
             <div id="gacha-results" class="hidden flex-col items-center w-full max-w-3xl bg-slate-950/80 backdrop-blur-md p-4 md:p-6 rounded-3xl border border-amber-500/50 shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -544,6 +594,36 @@
                 <div id="gacha-results-grid" class="w-full mb-4 md:mb-6 flex justify-center items-center"></div>
                 <button onclick="closeGachaModal()" class="gold-gradient gold-gradient-hover text-slate-950 font-black px-8 md:px-12 py-2.5 md:py-3.5 rounded-full text-sm md:text-base shadow-2xl transform active:scale-95 transition">
                     結果を確認
+                </button>
+            </div>
+        </div>
+
+        <!-- デイリーミッションダイアログ -->
+        <div id="missions-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+            <div class="bg-slate-900 border-2 border-emerald-500/60 rounded-3xl p-5 max-w-md w-full text-center shadow-2xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-base md:text-lg font-black text-emerald-400">デイリーミッション</h3>
+                    <button onclick="closeMissionsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <div id="missions-list" class="space-y-2 mb-4 text-left"></div>
+                <button onclick="closeMissionsModal()" class="w-full bg-slate-800 text-slate-300 font-bold text-xs py-2 rounded-xl border border-slate-700">閉じる</button>
+            </div>
+        </div>
+
+        <!-- レイドボスダイアログ -->
+        <div id="raid-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+            <div class="bg-slate-900 border-2 border-rose-500/60 rounded-3xl p-5 max-w-md w-full text-center shadow-2xl">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-base md:text-lg font-black text-rose-400">レイドボス「終焉巨神ベヒモス」</h3>
+                    <button onclick="closeRaidModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <p class="text-xs text-slate-300 mb-4">世界中の全召喚士とともに総力戦！ダメージを与えるほど豪華報酬！</p>
+                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 mb-4 text-left space-y-1 text-xs">
+                    <div class="flex justify-between"><span>あなたの累計ダメージ:</span><span id="raid-my-damage" class="font-bold text-amber-300">0</span></div>
+                    <div class="flex justify-between"><span>レイド参加可能回数:</span><span id="raid-tickets" class="font-bold text-emerald-400">3 / 3</span></div>
+                </div>
+                <button onclick="startRaidBattle()" class="w-full bg-gradient-to-r from-rose-600 to-amber-500 text-white font-black text-sm py-3 rounded-xl shadow-lg active:scale-95 transition">
+                    レイドバトル開始 (スタミナ消費なし)
                 </button>
             </div>
         </div>
@@ -589,34 +669,72 @@
             if (btnIcon) btnIcon.className = audioEnabled ? 'fa-solid fa-volume-high text-[10px] sm:text-xs' : 'fa-solid fa-volume-xmark text-[10px] sm:text-xs text-rose-500';
         }
 
+        // Web Audio API による拡張SE表現
         function playSE(type) {
             if (!audioEnabled) return;
             initAudio();
             if (!audioCtx) return;
 
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
             const now = audioCtx.currentTime;
 
             if (type === 'hit') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(30, now + 0.12);
                 gain.gain.setValueAtTime(0.3, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
-            } else if (type === 'skill') {
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now); osc.stop(now + 0.12);
+            } else if (type === 'crit') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(300, now);
-                osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
-                gain.gain.setValueAtTime(0.4, now);
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
+                gain.gain.setValueAtTime(0.5, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-                osc.start(now);
-                osc.stop(now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            } else if (type === 'skill') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(900, now + 0.3);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now); osc.stop(now + 0.35);
+            } else if (type === 'heal') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.linearRampToValueAtTime(880, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now); osc.stop(now + 0.35);
             }
+        }
+
+        // 属性相性表 (有利: 1.5倍, 不利: 0.8倍)
+        const ELEMENT_AFFINITY = {
+            fire:  { wind: 1.5, water: 0.8 },
+            water: { fire: 1.5, wind: 0.8 },
+            wind:  { water: 1.5, fire: 0.8 },
+            light: { dark: 1.5 },
+            dark:  { light: 1.5 }
+        };
+
+        function getElementMultiplier(attackerElem, defenderElem) {
+            if (!attackerElem || !defenderElem) return 1.0;
+            if (ELEMENT_AFFINITY[attackerElem] && ELEMENT_AFFINITY[attackerElem][defenderElem]) {
+                return ELEMENT_AFFINITY[attackerElem][defenderElem];
+            }
+            return 1.0;
         }
 
         const ENEMY_TYPES = {
@@ -628,16 +746,48 @@
             'dragon': { name: 'レッドドラゴン', element: 'fire', spriteClass: 'sprite-dragon' },
             'luciferia': { name: '魔王・深淵のルシフェリア', element: 'dark', spriteClass: 'sprite-luciferia' },
             'bahamut': { name: '滅世竜バハムート', element: 'fire', spriteClass: 'sprite-bahamut' },
-            'chronos': { name: '虚無竜クロノス', element: 'dark', spriteClass: 'sprite-chronos' }
+            'chronos': { name: '虚無竜クロノス', element: 'dark', spriteClass: 'sprite-chronos' },
+            'behemoth': { name: '終焉巨神ベヒモス', element: 'fire', spriteClass: 'sprite-dragon' }
         };
 
+        // スキル性能の個別化 (target: single/all/heal/buff, power, statusEffect)
         const MASTER_UNITS = {
-            'iris': { id: 'iris', name: '新進気鋭の剣士アイリス', rarity: 'R', element: 'fire', image: 'Gemini_Generated_Image_88wbnf88wbnf88wb.png', baseHp: 500, baseAtk: 125, skillName: 'ファースト・スラスト', dialogue: '「未熟者ですが、精一杯頑張ります！」' },
-            'aquaria': { id: 'aquaria', name: '蒼海の巫女アクアリア', rarity: 'SSR', element: 'water', image: 'ChatGPT Image 2026年9月21日 08_54_21.png', baseHp: 880, baseAtk: 195, skillName: 'タイダル・ヴェール', dialogue: '「清らかなる水の導きを。あなたとともに参りましょう。」' },
-            'freya': { id: 'freya', name: '紅蓮の剣姫フレイア', rarity: 'SSR', element: 'fire', image: 'ChatGPT Image 2026年9月21日 09_08_35.png', baseHp: 950, baseAtk: 220, skillName: 'クリムゾン・ブレイド', dialogue: '「私の焔からは誰も逃れられないわ。一気に決めるわよ！」' },
-            'lumina': { id: 'lumina', name: '天光の聖女ルミナ', rarity: 'SR', element: 'light', image: 'Gemini_Generated_Image_ccovrhccovrhccov.png', baseHp: 720, baseAtk: 150, skillName: 'ホーリー・サンクチュアリ', dialogue: '「光の導きがあらんことを。」' },
-            'veronica': { id: 'veronica', name: '紫電の武神ヴェロニカ', rarity: 'SR', element: 'fire', image: 'Gemini_Generated_Image_bdl520bdl520bdl5.png', baseHp: 750, baseAtk: 165, skillName: '紫電雷光閃', dialogue: '「我が槍の閃光、見切れるか！」' },
-            'mylene': { id: 'mylene', name: '星詠の猫剣士ミレーヌ', rarity: 'SR', element: 'wind', image: 'Gemini_Generated_Image_7etcxe7etcxe7etc.png', baseHp: 620, baseAtk: 155, skillName: 'スターダスト・スラッシュ', dialogue: '「にゃはっ！星の導きで切り開いちゃうよ！」' }
+            'iris': { 
+                id: 'iris', name: '新進気鋭の剣士アイリス', rarity: 'R', element: 'fire', 
+                image: 'Gemini_Generated_Image_88wbnf88wbnf88wb.png', baseHp: 500, baseAtk: 125, 
+                skillName: 'ファースト・スラスト', skillType: 'single', skillPower: 1.8,
+                statusEffect: null, dialogue: '「未熟者ですが、精一杯頑張ります！」' 
+            },
+            'aquaria': { 
+                id: 'aquaria', name: '蒼海の巫女アクアリア', rarity: 'SSR', element: 'water', 
+                image: 'ChatGPT Image 2026年9月21日 08_54_21.png', baseHp: 880, baseAtk: 195, 
+                skillName: 'タイダル・ヴェール', skillType: 'heal', skillPower: 0.4,
+                statusEffect: 'atk_up', dialogue: '「清らかなる水の導きを。あなたとともに参りましょう。」' 
+            },
+            'freya': { 
+                id: 'freya', name: '紅蓮の剣姫フレイア', rarity: 'SSR', element: 'fire', 
+                image: 'ChatGPT Image 2026年9月21日 09_08_35.png', baseHp: 950, baseAtk: 220, 
+                skillName: 'クリムゾン・ブレイド', skillType: 'all', skillPower: 2.2,
+                statusEffect: 'poison', dialogue: '「私の焔からは誰も逃れられないわ。一気に決めるわよ！」' 
+            },
+            'lumina': { 
+                id: 'lumina', name: '天光の聖女ルミナ', rarity: 'SR', element: 'light', 
+                image: 'Gemini_Generated_Image_ccovrhccovrhccov.png', baseHp: 720, baseAtk: 150, 
+                skillName: 'ホーリー・サンクチュアリ', skillType: 'heal', skillPower: 0.5,
+                statusEffect: null, dialogue: '「光の導きがあらんことを。」' 
+            },
+            'veronica': { 
+                id: 'veronica', name: '紫電の武神ヴェロニカ', rarity: 'SR', element: 'fire', 
+                image: 'Gemini_Generated_Image_bdl520bdl520bdl5.png', baseHp: 750, baseAtk: 165, 
+                skillName: '紫電雷光閃', skillType: 'single', skillPower: 2.5,
+                statusEffect: 'stun', dialogue: '「我が槍の閃光、見切れるか！」' 
+            },
+            'mylene': { 
+                id: 'mylene', name: '星詠の猫剣士ミレーヌ', rarity: 'SR', element: 'wind', 
+                image: 'Gemini_Generated_Image_7etcxe7etcxe7etc.png', baseHp: 620, baseAtk: 155, 
+                skillName: 'スターダスト・スラッシュ', skillType: 'all', skillPower: 1.5,
+                statusEffect: 'def_down', dialogue: '「にゃはっ！星の導きで切り開いちゃうよ！」' 
+            }
         };
 
         const MASTER_RELICS = [
@@ -652,37 +802,36 @@
             { masterId: 'rel_iron_dagger', name: '鉄の短剣', stat: 'atk', val: 15, rarity: 'N', icon: 'fa-pen-nib' }
         ];
 
-        /* Multi-enemy Wave Quests */
         const QUESTS = [
-            { id: 1, chapter: 1, name: '1章：平原の試練', ap: 5, rewardGems: 100, waves: [
+            { id: 1, chapter: 1, name: '1章：平原の試練', ap: 5, rewardExp: 30, rewardGems: 100, waves: [
                 { enemies: [{ type: 'slime', hp: 200, atk: 20 }, { type: 'slime', hp: 200, atk: 20 }] }, 
                 { enemies: [{ type: 'goblin', hp: 550, atk: 40, isBoss: true }] }
             ] },
-            { id: 2, chapter: 2, name: '2章：闇深き遠吠え', ap: 8, rewardGems: 150, waves: [
+            { id: 2, chapter: 2, name: '2章：闇深き遠吠え', ap: 8, rewardExp: 50, rewardGems: 150, waves: [
                 { enemies: [{ type: 'wolf', hp: 450, atk: 35 }, { type: 'goblin', hp: 400, atk: 30 }] }, 
                 { enemies: [{ type: 'wolf', hp: 1100, atk: 60, isBoss: true }, { type: 'wolf', hp: 450, atk: 35 }] }
             ] },
-            { id: 3, chapter: 3, name: '3章：地下墓地の呻き', ap: 10, rewardGems: 200, waves: [
+            { id: 3, chapter: 3, name: '3章：地下墓地の呻き', ap: 10, rewardExp: 80, rewardGems: 200, waves: [
                 { enemies: [{ type: 'skeleton', hp: 600, atk: 45 }, { type: 'skeleton', hp: 600, atk: 45 }] }, 
                 { enemies: [{ type: 'skeleton', hp: 1600, atk: 80, isBoss: true }, { type: 'wolf', hp: 700, atk: 50 }] }
             ] },
-            { id: 4, chapter: 4, name: '4章：巨石の守護者', ap: 12, rewardGems: 250, waves: [
+            { id: 4, chapter: 4, name: '4章：巨石の守護者', ap: 12, rewardExp: 120, rewardGems: 250, waves: [
                 { enemies: [{ type: 'golem', hp: 1200, atk: 65 }] }, 
                 { enemies: [{ type: 'golem', hp: 2500, atk: 100, isBoss: true }, { type: 'goblin', hp: 800, atk: 50 }] }
             ] },
-            { id: 5, chapter: 5, name: '5章：竜の領域', ap: 15, rewardGems: 300, waves: [
+            { id: 5, chapter: 5, name: '5章：竜の領域', ap: 15, rewardExp: 180, rewardGems: 300, waves: [
                 { enemies: [{ type: 'dragon', hp: 2000, atk: 90 }, { type: 'golem', hp: 1500, atk: 70 }] },
                 { enemies: [{ type: 'dragon', hp: 3600, atk: 135, isBoss: true }] }
             ] },
-            { id: 6, chapter: 6, name: '6章：深淵の魔王城', ap: 20, rewardGems: 500, waves: [
+            { id: 6, chapter: 6, name: '6章：深淵の魔王城', ap: 20, rewardExp: 250, rewardGems: 500, waves: [
                 { enemies: [{ type: 'dragon', hp: 3500, atk: 120 }, { type: 'skeleton', hp: 2500, atk: 90 }] }, 
                 { enemies: [{ type: 'luciferia', hp: 8500, atk: 210, isBoss: true }, { type: 'dragon', hp: 3000, atk: 100 }] }
             ] },
-            { id: 7, chapter: 7, name: '7章：終焉を齎す龍神', ap: 25, rewardGems: 800, waves: [
+            { id: 7, chapter: 7, name: '7章：終焉を齎す龍神', ap: 25, rewardExp: 350, rewardGems: 800, waves: [
                 { enemies: [{ type: 'luciferia', hp: 6000, atk: 160 }, { type: 'golem', hp: 4000, atk: 120 }] }, 
                 { enemies: [{ type: 'bahamut', hp: 14000, atk: 280, isBoss: true }] }
             ] },
-            { id: 8, chapter: 8, name: '8章：虚無の深淵', ap: 30, rewardGems: 1000, waves: [
+            { id: 8, chapter: 8, name: '8章：虚無の深淵', ap: 30, rewardExp: 500, rewardGems: 1000, waves: [
                 { enemies: [{ type: 'bahamut', hp: 10000, atk: 220 }, { type: 'luciferia', hp: 8000, atk: 200 }] }, 
                 { enemies: [{ type: 'chronos', hp: 21000, atk: 350, isBoss: true }] }
             ] }
@@ -690,16 +839,32 @@
 
         let playerData = {
             name: '',
-            level: 1, gems: 3000, ap: 50, maxAp: 50, crystals: 50,
+            level: 1, exp: 0, gems: 3000, ap: 50, maxAp: 50, crystals: 50,
             towerFloor: 1,
             clearedQuests: [],
             clearedTowerFloors: [],
             party: ['iris', null, null],
             inventory: {
-                'iris': { level: 1, awaken: 0, equippedRelicInstanceId: null }
+                'iris': { level: 1, awaken: 0, skillLevel: 1, equippedRelicInstanceId: null }
             },
-            relics: []
+            relics: [],
+            // デイリーミッション＆ログインボーナス
+            dailyProgress: {
+                lastLoginDate: '',
+                questCount: 0,
+                gachaCount: 0,
+                claimedLogin: false,
+                claimedQuest: false,
+                claimedGacha: false
+            },
+            // レイド関連データ
+            raidDamage: 0,
+            raidTickets: 3
         };
+
+        // レイドボス全体の共有HP (ローカル共有疑似データ)
+        let raidBossHp = 10000000;
+        const RAID_BOSS_MAX_HP = 10000000;
 
         let currentGachaType = 'char';
         let battleSpeed = 1;
@@ -707,9 +872,26 @@
 
         window.onload = function() {
             loadSavedData();
+            checkDailyReset();
             document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
             document.getElementById('screen-title').classList.remove('hidden');
         };
+
+        function checkDailyReset() {
+            const today = new Date().toISOString().split('T')[0];
+            if (playerData.dailyProgress.lastLoginDate !== today) {
+                playerData.dailyProgress = {
+                    lastLoginDate: today,
+                    questCount: 0,
+                    gachaCount: 0,
+                    claimedLogin: false,
+                    claimedQuest: false,
+                    claimedGacha: false
+                };
+                playerData.raidTickets = 3;
+                saveData();
+            }
+        }
 
         function handleTitleTap() {
             playSE('skill');
@@ -745,12 +927,12 @@
         }
 
         function saveData() {
-            try { localStorage.setItem('arcana_connect_save_v14', JSON.stringify(playerData)); } catch(e){}
+            try { localStorage.setItem('arcana_connect_save_v15', JSON.stringify(playerData)); } catch(e){}
         }
 
         function loadSavedData() {
             try {
-                const saved = localStorage.getItem('arcana_connect_save_v14') || localStorage.getItem('arcana_connect_save_v13');
+                const saved = localStorage.getItem('arcana_connect_save_v15') || localStorage.getItem('arcana_connect_save_v14');
                 if(saved) playerData = { ...playerData, ...JSON.parse(saved) };
             } catch(e){}
         }
@@ -780,12 +962,28 @@
                 document.getElementById('home-character-img').src = unit.image;
                 document.getElementById('home-dialogue-text').innerText = unit.dialogue;
             }
+            updateRaidBannerUI();
+        }
+
+        // プレイヤー経験値とレベルアップ（最大AP上昇＆全回復）
+        function addPlayerExp(amount) {
+            playerData.exp += amount;
+            const nextExp = playerData.level * 100;
+            if (playerData.exp >= nextExp) {
+                playerData.exp -= nextExp;
+                playerData.level += 1;
+                playerData.maxAp += 5; // レベルアップで上限突破
+                playerData.ap = playerData.maxAp; // AP全回復
+                showCustomModal('LEVEL UP!', `プレイヤーレベルが Lv.${playerData.level} に上がりました！\n最大APが ${playerData.maxAp} に増加し、APが全回復しました！`);
+            }
+            updateHeaderUI();
         }
 
         function updateHeaderUI() {
             document.getElementById('player-name').innerText = playerData.name || '召喚士';
             document.getElementById('player-level').innerText = playerData.level;
             document.getElementById('player-ap').innerText = playerData.ap;
+            document.getElementById('player-max-ap').innerText = playerData.maxAp;
             document.getElementById('player-gems').innerText = playerData.gems.toLocaleString();
             document.getElementById('player-crystals').innerText = playerData.crystals;
             const enhanceCrystalEl = document.getElementById('enhance-crystal-count');
@@ -800,7 +998,7 @@
             }
             showConfirmModal(
                 'AP回復', 
-                `ジュエル 50 個を消費して\nAPを 50 回復（全回復）しますか？\n\n(所持ジュエル: ${playerData.gems.toLocaleString()})`,
+                `ジュエル 50 個を消費して\nAPを全回復しますか？\n\n(所持ジュエル: ${playerData.gems.toLocaleString()})`,
                 () => {
                     if (playerData.gems < 50) {
                         showCustomModal('ジュエル不足', 'ジュエルが不足しています。');
@@ -900,11 +1098,13 @@
             return newInst;
         }
 
+        // 確定演出＆昇格演出付きガチャ
         function performGacha(count) {
             const cost = count * 300;
             if (playerData.gems < cost) { showCustomModal('ジュエル不足', 'ジュエルが不足しています。'); return; }
 
             playerData.gems -= cost;
+            playerData.dailyProgress.gachaCount += count;
             updateHeaderUI();
 
             const modal = document.getElementById('gacha-modal');
@@ -917,16 +1117,23 @@
             grid.innerHTML = '';
 
             const pulled = [];
+            let maxRarity = 'R';
+
             for (let i = 0; i < count; i++) {
                 if(currentGachaType === 'char') {
                     const rand = Math.random() * 100;
                     let id = 'iris';
-                    if (rand < 1.5) id = 'freya';
-                    else if (rand < 3.0) id = 'aquaria';
-                    else if (rand < 9.0) id = 'lumina';
-                    else if (rand < 15.0) id = 'veronica';
-                    else if (rand < 21.0) id = 'mylene';
-                    pulled.push({ type: 'char', item: MASTER_UNITS[id] });
+                    if (rand < 3.0) id = 'freya';
+                    else if (rand < 6.0) id = 'aquaria';
+                    else if (rand < 15.0) id = 'lumina';
+                    else if (rand < 25.0) id = 'veronica';
+                    else if (rand < 35.0) id = 'mylene';
+                    
+                    const item = MASTER_UNITS[id];
+                    if (item.rarity === 'SSR') maxRarity = 'SSR';
+                    else if (item.rarity === 'SR' && maxRarity !== 'SSR') maxRarity = 'SR';
+
+                    pulled.push({ type: 'char', item: item });
                 } else {
                     const rand = Math.random() * 100;
                     let filtered = MASTER_RELICS.filter(r => r.rarity === 'N');
@@ -935,8 +1142,26 @@
                     else if (rand < 60) filtered = MASTER_RELICS.filter(r => r.rarity === 'R');
 
                     const r = filtered[Math.floor(Math.random() * filtered.length)] || MASTER_RELICS[0];
+                    if (r.rarity === 'SSR') maxRarity = 'SSR';
+                    else if (r.rarity === 'SR' && maxRarity !== 'SSR') maxRarity = 'SR';
+
                     pulled.push({ type: 'equip', item: r });
                 }
+            }
+
+            // レア度別の確定演出フェーズ
+            const circleFx = document.getElementById('gacha-circle-fx');
+            const textFx = document.getElementById('gacha-text-fx');
+
+            if (maxRarity === 'SSR') {
+                circleFx.className = "absolute inset-0 rounded-full border-4 border-amber-300 border-t-yellow-300 animate-gacha-magic shadow-[0_0_50px_#fde047]";
+                textFx.innerHTML = "<span class='text-gold font-extrabold'>SSR 確定オーラ発生！！</span>";
+            } else if (maxRarity === 'SR') {
+                circleFx.className = "absolute inset-0 rounded-full border-4 border-purple-400 border-t-indigo-400 animate-gacha-magic shadow-[0_0_30px_#c084fc]";
+                textFx.innerText = "SR 以上確定！";
+            } else {
+                circleFx.className = "absolute inset-0 rounded-full border-4 border-blue-400 border-t-cyan-400 animate-gacha-magic";
+                textFx.innerText = "SUMMONING...";
             }
 
             setTimeout(() => {
@@ -952,7 +1177,7 @@
                     if (res.type === 'char') {
                         const u = res.item;
                         const isNew = !playerData.inventory[u.id];
-                        if (isNew) playerData.inventory[u.id] = { level: 1, awaken: 0, equippedRelicInstanceId: null };
+                        if (isNew) playerData.inventory[u.id] = { level: 1, awaken: 0, skillLevel: 1, equippedRelicInstanceId: null };
                         else playerData.crystals += 30;
 
                         const rarityColor = u.rarity === 'SSR' ? 'text-amber-400 font-black' : (u.rarity === 'SR' ? 'text-purple-400 font-black' : 'text-blue-400 font-bold');
@@ -968,7 +1193,7 @@
                 });
 
                 updateHeaderUI();
-            }, 1500);
+            }, 1600);
         }
 
         function closeGachaModal() {
@@ -1038,12 +1263,14 @@
             Object.keys(playerData.inventory).forEach(unitId => {
                 const unit = MASTER_UNITS[unitId];
                 const inv = playerData.inventory[unitId];
+                if (!inv.skillLevel) inv.skillLevel = 1;
 
                 const maxLevel = 30 + (inv.awaken * 10);
                 const isMaxLv = inv.level >= maxLevel;
 
                 const lvlCostGems = inv.level * 50;
                 const awakenCostCrystals = (inv.awaken + 1) * 30;
+                const skillCostCrystals = inv.skillLevel * 20;
 
                 const card = document.createElement('div');
                 card.className = 'bg-slate-900 border border-slate-800 rounded-2xl p-2.5 md:p-3 flex justify-between items-center space-x-2 md:space-x-3 shadow-lg';
@@ -1051,15 +1278,18 @@
                     <img src="${unit.image}" class="h-16 w-12 md:h-20 md:w-16 object-contain">
                     <div class="flex-1 overflow-hidden">
                         <div class="text-[11px] md:text-xs font-black text-white truncate">${unit.name}</div>
-                        <div class="text-[9px] md:text-[10px] text-amber-300 font-bold mt-0.5">Lv. ${inv.level} / ${maxLevel} | 覚醒: ★${inv.awaken}</div>
+                        <div class="text-[9px] md:text-[10px] text-amber-300 font-bold mt-0.5">Lv. ${inv.level} / ${maxLevel} | 覚醒: ★${inv.awaken} | スキルLv.${inv.skillLevel}</div>
                         <div class="text-[9px] md:text-[10px] text-slate-400 mt-0.5">HP: ${unit.baseHp + (inv.level * 25) + (inv.awaken * 150)} | ATK: ${unit.baseAtk + (inv.level * 8) + (inv.awaken * 50)}</div>
                     </div>
                     <div class="flex flex-col space-y-1 md:space-y-1.5 shrink-0">
-                        <button onclick="levelUpUnit('${unitId}')" ${isMaxLv ? 'disabled' : ''} class="${isMaxLv ? 'bg-slate-800 text-slate-500' : 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 hover:from-amber-400 hover:to-yellow-300'} text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 md:py-1.5 rounded-lg shadow transition">
+                        <button onclick="levelUpUnit('${unitId}')" ${isMaxLv ? 'disabled' : ''} class="${isMaxLv ? 'bg-slate-800 text-slate-500' : 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 hover:from-amber-400 hover:to-yellow-300'} text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 rounded-lg shadow transition">
                             ${isMaxLv ? 'Lv.MAX' : `Lv.UP (${lvlCostGems}G)`}
                         </button>
-                        <button onclick="awakenUnit('${unitId}')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 md:py-1.5 rounded-lg shadow transition">
-                            覚醒 (${awakenCostCrystals} C)
+                        <button onclick="awakenUnit('${unitId}')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 rounded-lg shadow transition">
+                            限界突破 (${awakenCostCrystals}C)
+                        </button>
+                        <button onclick="upgradeSkill('${unitId}')" class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-[9px] md:text-[10px] font-black px-2 md:px-3 py-1 rounded-lg shadow transition">
+                            スキル強化 (${skillCostCrystals}C)
                         </button>
                     </div>
                 `;
@@ -1071,7 +1301,7 @@
             const inv = playerData.inventory[unitId];
             const maxLevel = 30 + (inv.awaken * 10);
             if (inv.level >= maxLevel) {
-                showCustomModal('レベル上限', '現在の覚醒段階でのレベル上限に達しています。先に覚醒を行ってください！');
+                showCustomModal('レベル上限', '現在の覚醒段階でのレベル上限に達しています。先に限界突破を行ってください！');
                 return;
             }
             const cost = inv.level * 50;
@@ -1091,7 +1321,7 @@
             const inv = playerData.inventory[unitId];
             const costCrystals = (inv.awaken + 1) * 30;
             if (playerData.crystals < costCrystals) {
-                showCustomModal('クリスタル不足', `覚醒に必要なクリスタルが不足しています。\n(必要: ${costCrystals} / 所持: ${playerData.crystals})\nガチャでキャラが重複した際に獲得できます。`);
+                showCustomModal('クリスタル不足', `限界突破に必要なクリスタルが不足しています。\n(必要: ${costCrystals} / 所持: ${playerData.crystals})\nガチャでキャラが重複した際に獲得できます。`);
                 return;
             }
             playerData.crystals -= costCrystals;
@@ -1100,7 +1330,24 @@
             renderEnhanceUI();
             renderPartyUI();
             playSE('skill');
-            showCustomModal('覚醒完了！', `${MASTER_UNITS[unitId].name} が ★${inv.awaken} に覚醒しました！\nレベル上限が突破され、ステータスが大幅強化されました！`);
+            showCustomModal('限界突破完了！', `${MASTER_UNITS[unitId].name} が ★${inv.awaken} に限界突破しました！\nレベル上限が突破され、ステータスが大幅強化されました！`);
+        }
+
+        function upgradeSkill(unitId) {
+            const inv = playerData.inventory[unitId];
+            if (!inv.skillLevel) inv.skillLevel = 1;
+            const costCrystals = inv.skillLevel * 20;
+
+            if (playerData.crystals < costCrystals) {
+                showCustomModal('クリスタル不足', `スキル強化に必要なクリスタルが不足しています。\n(必要: ${costCrystals} / 所持: ${playerData.crystals})`);
+                return;
+            }
+            playerData.crystals -= costCrystals;
+            inv.skillLevel += 1;
+            updateHeaderUI();
+            renderEnhanceUI();
+            playSE('skill');
+            showCustomModal('スキル強化完了！', `${MASTER_UNITS[unitId].name} のスキルレベルが Lv.${inv.skillLevel} に上昇しました！\n必殺技の威力・効果量がアップ！`);
         }
 
         let selectedRelicUnit = null;
@@ -1208,7 +1455,7 @@
                 const card = document.createElement('div');
                 card.className = `border rounded-2xl p-3 md:p-4 flex flex-col justify-between shadow-xl ${isUnlocked ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-950 border-slate-900 opacity-50'}`;
                 
-                let descText = '複数敵の群れが出現！貴重なレリックもドロップ！';
+                let descText = '複数敵の群れが出現！属性相性を活かして有利に戦おう！';
                 if (q.chapter === 6) descText = '※ ラスボス「魔王ルシフェリア」が立ち塞がる！';
                 if (q.chapter === 7) descText = '※ 最凶の真ボス「滅世竜バハムート」降臨！';
                 if (q.chapter === 8) descText = '※ 虚無より出でし「虚無竜クロノス」降臨！';
@@ -1250,6 +1497,7 @@
             }
 
             playerData.ap -= quest.ap;
+            playerData.dailyProgress.questCount += 1;
             updateHeaderUI();
             
             isCurrentStageClearedBefore = playerData.clearedQuests.includes(quest.id);
@@ -1291,7 +1539,7 @@
             else if (isLuciferiaFloor) { enemyType = 'luciferia'; enemyName = '魔王・深淵のルシフェリア'; }
 
             const towerQuest = {
-                id: 999, name: `タワー第 ${floor} 階層`, ap: 0, rewardGems: 300,
+                id: 999, name: `タワー第 ${floor} 階層`, ap: 0, rewardExp: 100, rewardGems: 300,
                 waves: [{
                     enemies: [{
                         type: enemyType,
@@ -1307,6 +1555,111 @@
             startBattle(towerQuest, activeParty);
         }
 
+        /* レイド・デイリーミッションUI拡張 */
+        function openMissionsModal() {
+            renderMissionsUI();
+            const modal = document.getElementById('missions-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+        function closeMissionsModal() {
+            document.getElementById('missions-modal').classList.add('hidden');
+            document.getElementById('missions-modal').classList.remove('flex');
+        }
+
+        function renderMissionsUI() {
+            const list = document.getElementById('missions-list');
+            list.innerHTML = '';
+            const p = playerData.dailyProgress;
+
+            const mData = [
+                { id: 'login', title: '1日1回ログインする', current: 1, target: 1, reward: '100 ジュエル', claimed: p.claimedLogin, claimFn: claimLoginReward },
+                { id: 'quest', title: 'クエストを3回クリアする', current: p.questCount, target: 3, reward: '150 ジュエル', claimed: p.claimedQuest, claimFn: claimQuestReward },
+                { id: 'gacha', title: 'ガチャを1回引く', current: p.gachaCount, target: 1, reward: '20 クリスタル', claimed: p.claimedGacha, claimFn: claimGachaReward }
+            ];
+
+            mData.forEach(m => {
+                const canClaim = m.current >= m.target && !m.claimed;
+                const div = document.createElement('div');
+                div.className = 'bg-slate-950 border border-slate-800 p-3 rounded-2xl flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <div class="text-xs font-bold text-white">${m.title}</div>
+                        <div class="text-[10px] text-slate-400">進捗: ${m.current} / ${m.target} | 報酬: <span class="text-amber-300 font-bold">${m.reward}</span></div>
+                    </div>
+                    <button ${!canClaim ? 'disabled' : ''} onclick="${m.claimFn.name}()" class="${m.claimed ? 'bg-slate-800 text-slate-500' : (canClaim ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-500')} text-[10px] px-3 py-1.5 rounded-lg font-bold">
+                        ${m.claimed ? '受取済' : (canClaim ? '受け取る' : '未達成')}
+                    </button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function claimLoginReward() {
+            playerData.dailyProgress.claimedLogin = true;
+            playerData.gems += 100;
+            updateHeaderUI();
+            renderMissionsUI();
+            showCustomModal('報酬獲得', 'ログインボーナス 100ジュエルを獲得しました！');
+        }
+        function claimQuestReward() {
+            playerData.dailyProgress.claimedQuest = true;
+            playerData.gems += 150;
+            updateHeaderUI();
+            renderMissionsUI();
+            showCustomModal('報酬獲得', 'デイリーミッション報酬 150ジュエルを獲得しました！');
+        }
+        function claimGachaReward() {
+            playerData.dailyProgress.claimedGacha = true;
+            playerData.crystals += 20;
+            updateHeaderUI();
+            renderMissionsUI();
+            showCustomModal('報酬獲得', 'デイリーミッション報酬 20クリスタルを獲得しました！');
+        }
+
+        function updateRaidBannerUI() {
+            const bar = document.getElementById('raid-boss-hp-bar');
+            const txt = document.getElementById('raid-boss-hp-text');
+            if (bar && txt) {
+                const pct = Math.max(0, (raidBossHp / RAID_BOSS_MAX_HP) * 100);
+                bar.style.width = `${pct}%`;
+                txt.innerText = `${raidBossHp.toLocaleString()} / ${RAID_BOSS_MAX_HP.toLocaleString()}`;
+            }
+        }
+
+        function openRaidModal() {
+            document.getElementById('raid-my-damage').innerText = playerData.raidDamage.toLocaleString();
+            document.getElementById('raid-tickets').innerText = `${playerData.raidTickets} / 3`;
+            const modal = document.getElementById('raid-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+        function closeRaidModal() {
+            document.getElementById('raid-modal').classList.add('hidden');
+            document.getElementById('raid-modal').classList.remove('flex');
+        }
+
+        function startRaidBattle() {
+            if (playerData.raidTickets <= 0) {
+                showCustomModal('挑戦権不足', '本日のレイド戦参加回数がありません。明日また挑戦してください！');
+                return;
+            }
+            const activeParty = playerData.party.filter(id => id !== null);
+            if (activeParty.length === 0) { showCustomModal('エラー', '出撃パーティを編成してください。'); return; }
+
+            playerData.raidTickets -= 1;
+            closeRaidModal();
+
+            const raidQuest = {
+                id: 888, isRaid: true, name: 'レイド：終焉巨神ベヒモス', ap: 0, rewardExp: 200, rewardGems: 500,
+                waves: [{
+                    enemies: [{
+                        type: 'behemoth', name: '終焉巨神ベヒモス', hp: raidBossHp, atk: 180, isBoss: true
+                    }]
+                }]
+            };
+            isCurrentStageClearedBefore = true;
+            startBattle(raidQuest, activeParty);
+        }
+
         let currentBattle = null;
 
         function startBattle(quest, activeParty) {
@@ -1318,6 +1671,7 @@
                 party: activeParty.map(id => {
                     const m = MASTER_UNITS[id];
                     const inv = playerData.inventory[id];
+                    const skLv = inv.skillLevel || 1;
                     
                     let bonusAtk = (inv.level * 8) + (inv.awaken * 50);
                     let bonusHp = (inv.level * 25) + (inv.awaken * 150);
@@ -1329,7 +1683,14 @@
                         }
                     }
 
-                    return { id: id, name: m.name, image: m.image, maxHp: m.baseHp + bonusHp, hp: m.baseHp + bonusHp, atk: m.baseAtk + bonusAtk, skillGauge: 0, skillName: m.skillName };
+                    return { 
+                        id: id, name: m.name, image: m.image, element: m.element,
+                        maxHp: m.baseHp + bonusHp, hp: m.baseHp + bonusHp, atk: m.baseAtk + bonusAtk, 
+                        skillGauge: 0, skillName: m.skillName, skillType: m.skillType, 
+                        skillPower: m.skillPower * (1 + (skLv - 1) * 0.15),
+                        statusEffect: m.statusEffect,
+                        status: null // バフ/デバフ状態 (poison, stun, atk_up, def_down)
+                    };
                 }),
                 isAuto: false, inProgress: true
             };
@@ -1350,7 +1711,10 @@
                 avatar.className = 'flex flex-col items-center space-y-0.5 md:space-y-1 relative z-20';
                 avatar.innerHTML = `
                     <div class="w-24 sm:w-36 md:w-64 bg-slate-900/95 border border-slate-700/80 rounded-lg p-1 md:p-2.5 backdrop-blur mb-0.5 md:mb-1 text-center shadow-xl">
-                        <div class="battle-name-ui text-white truncate">${unit.name}</div>
+                        <div class="battle-name-ui text-white truncate flex items-center justify-center space-x-1">
+                            <span>${unit.name}</span>
+                            <span id="unit-status-badge-${idx}" class="text-[8px] px-1 bg-amber-500 text-slate-950 font-black rounded hidden">BUFF</span>
+                        </div>
                         <div class="w-full bg-slate-950 h-1 md:h-1.5 rounded-full overflow-hidden my-0.5 border border-slate-800">
                             <div id="unit-hp-bar-${idx}" class="bg-emerald-500 h-full w-full transition-all"></div>
                         </div>
@@ -1377,8 +1741,17 @@
             currentBattle.party.forEach((unit, idx) => {
                 const hpBar = document.getElementById(`unit-hp-bar-${idx}`);
                 const spBar = document.getElementById(`unit-sp-bar-${idx}`);
+                const badge = document.getElementById(`unit-status-badge-${idx}`);
                 if (hpBar) hpBar.style.width = `${Math.max(0, (unit.hp / unit.maxHp) * 100)}%`;
                 if (spBar) spBar.style.width = `${Math.min(100, unit.skillGauge)}%`;
+                if (badge) {
+                    if (unit.status) {
+                        badge.innerText = unit.status.toUpperCase();
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
             });
         }
 
@@ -1396,7 +1769,8 @@
                     atk: e.atk,
                     spriteClass: meta.spriteClass,
                     element: meta.element,
-                    isBoss: !!e.isBoss
+                    isBoss: !!e.isBoss,
+                    status: null
                 };
             });
 
@@ -1425,6 +1799,7 @@
                         <div class="flex items-center justify-center space-x-1 mb-0.5">
                             <span class="px-1 py-0.2 rounded text-[8px] sm:text-[9px] font-black shrink-0 ${badgeClass}">${elemText}</span>
                             <div class="battle-name-ui text-white leading-tight font-black">${enemy.name}</div>
+                            <span id="enemy-status-badge-${idx}" class="text-[8px] px-1 bg-purple-500 text-white font-black rounded hidden">POISON</span>
                         </div>
                         <div class="w-full bg-slate-950 h-1 md:h-1.5 rounded-full overflow-hidden border border-slate-800">
                             <div id="enemy-hp-bar-${idx}" class="bg-gradient-to-r from-rose-600 to-amber-400 h-full w-full transition-all duration-300"></div>
@@ -1442,25 +1817,43 @@
             if (!enemy) return;
             const bar = document.getElementById(`enemy-hp-bar-${idx}`);
             if (bar) bar.style.width = `${Math.max(0, (enemy.hp / enemy.maxHp) * 100)}%`;
+            const badge = document.getElementById(`enemy-status-badge-${idx}`);
+            if (badge) {
+                if (enemy.status) {
+                    badge.innerText = enemy.status.toUpperCase();
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
         }
 
-        function showDamageNumberOnEnemy(enemyIdx, amount, isCritical = false) {
+        // ダメージ数字演出（属性演出「WEAK」「RESIST」およびクリティカル・画面シェイク）
+        function showDamageNumberOnEnemy(enemyIdx, amount, isCritical = false, elementEffect = '') {
             const wrapper = document.getElementById(`enemy-wrapper-${enemyIdx}`);
             if (!wrapper) return;
 
             const dmgEl = document.createElement('div');
-            dmgEl.className = 'damage-number';
+            dmgEl.className = 'damage-number flex flex-col items-center';
             
             const offsetX = (Math.random() - 0.5) * 40;
             dmgEl.style.left = `calc(50% + ${offsetX}px)`;
             dmgEl.style.top = `20%`;
 
+            let elemTag = '';
+            if (elementEffect === 'weak') {
+                elemTag = '<span class="text-[10px] text-yellow-300 font-extrabold tracking-widest animate-bounce">WEAK!</span>';
+            } else if (elementEffect === 'resist') {
+                elemTag = '<span class="text-[10px] text-slate-400 font-extrabold tracking-widest">RESIST</span>';
+            }
+
             if (isCritical) {
                 dmgEl.className += ' text-amber-300 text-2xl md:text-4xl z-40';
-                dmgEl.innerText = `${amount}!`;
+                dmgEl.innerHTML = `${elemTag}<span>${amount}!</span>`;
+                triggerScreenShake();
             } else {
                 dmgEl.className += ' text-rose-500 text-xl md:text-3xl z-40';
-                dmgEl.innerText = amount;
+                dmgEl.innerHTML = `${elemTag}<span>${amount}</span>`;
             }
 
             wrapper.appendChild(dmgEl);
@@ -1468,6 +1861,34 @@
             setTimeout(() => {
                 if (dmgEl.parentNode) dmgEl.parentNode.removeChild(dmgEl);
             }, 800);
+        }
+
+        function triggerScreenShake() {
+            const field = document.getElementById('battle-field');
+            field.classList.add('animate-shake');
+            setTimeout(() => field.classList.remove('animate-shake'), 300);
+        }
+
+        // 必殺技カットイン演出
+        function playCutin(unit, callback) {
+            const overlay = document.getElementById('cutin-overlay');
+            const banner = document.getElementById('cutin-banner');
+            document.getElementById('cutin-img').src = unit.image;
+            document.getElementById('cutin-unit-name').innerText = unit.name;
+            document.getElementById('cutin-skill-name').innerText = unit.skillName;
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            banner.classList.add('animate-cutin');
+
+            playSE('skill');
+
+            setTimeout(() => {
+                banner.classList.remove('animate-cutin');
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                if(callback) callback();
+            }, 1200 / battleSpeed);
         }
 
         function toggleSpeed() {
@@ -1486,6 +1907,73 @@
             document.getElementById('auto-status').className = currentBattle.isAuto ? 'text-emerald-400 font-extrabold' : 'text-rose-400 font-extrabold';
         }
 
+        // 個別必殺技・バフ・回復・状態異常ロジック
+        function triggerUnitSkill(unitIdx) {
+            if (!currentBattle || !currentBattle.inProgress) return;
+            const unit = currentBattle.party[unitIdx];
+            if (!unit || unit.skillGauge < 100 || unit.hp <= 0) return;
+
+            unit.skillGauge = 0;
+            const btn = document.getElementById(`skill-btn-${unitIdx}`);
+            if (btn) {
+                btn.disabled = true;
+                btn.className = 'bg-slate-800 border border-slate-700 rounded-xl p-1 md:p-2 text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-400 opacity-50 transition-all flex flex-col items-center justify-center leading-tight break-words h-full min-h-[2.5rem] md:min-h-[3.2rem] text-center shadow';
+            }
+
+            playCutin(unit, () => {
+                if (unit.skillType === 'heal') {
+                    // 全体回復
+                    currentBattle.party.forEach((u, i) => {
+                        if (u.hp > 0) {
+                            const healAmount = Math.floor(unit.atk * unit.skillPower);
+                            u.hp = Math.min(u.maxHp, u.hp + healAmount);
+                        }
+                    });
+                    playSE('heal');
+                    updatePartyBarsUI();
+                } else if (unit.skillType === 'all') {
+                    // 全体攻撃
+                    currentBattle.enemies.forEach((e, idx) => {
+                        if (e.hp > 0) {
+                            let mult = getElementMultiplier(unit.element, e.element);
+                            let dmg = Math.floor(unit.atk * unit.skillPower * mult);
+                            if (unit.status === 'atk_up') dmg = Math.floor(dmg * 1.3);
+                            e.hp -= dmg;
+                            if (unit.statusEffect) e.status = unit.statusEffect;
+
+                            let elemEff = mult > 1.0 ? 'weak' : (mult < 1.0 ? 'resist' : '');
+                            showDamageNumberOnEnemy(idx, dmg, true, elemEff);
+                            updateSingleEnemyHpUI(idx);
+                        }
+                    });
+                    playSE('crit');
+                } else {
+                    // 単体特大攻撃
+                    const targets = currentBattle.enemies.map((e, i) => ({ enemy: e, index: i })).filter(item => item.enemy.hp > 0);
+                    if (targets.length > 0) {
+                        const target = targets[0];
+                        let mult = getElementMultiplier(unit.element, target.enemy.element);
+                        let dmg = Math.floor(unit.atk * unit.skillPower * mult);
+                        if (unit.status === 'atk_up') dmg = Math.floor(dmg * 1.3);
+                        target.enemy.hp -= dmg;
+                        if (unit.statusEffect) target.enemy.status = unit.statusEffect;
+
+                        let elemEff = mult > 1.0 ? 'weak' : (mult < 1.0 ? 'resist' : '');
+                        showDamageNumberOnEnemy(target.index, dmg, true, elemEff);
+                        updateSingleEnemyHpUI(target.index);
+                    }
+                    playSE('crit');
+                }
+
+                if (unit.statusEffect === 'atk_up') unit.status = 'atk_up';
+
+                if (currentBattle.enemies.every(e => e.hp <= 0)) {
+                    handleEnemyKilled();
+                }
+            });
+        }
+
+        // バトルターンメインループ
         function startTurnLoop() {
             if (!currentBattle || !currentBattle.inProgress) return;
             const delay = 1000 / battleSpeed;
@@ -1496,16 +1984,35 @@
                 const aliveEnemies = currentBattle.enemies.filter(e => e.hp > 0);
                 if (aliveEnemies.length === 0) { handleEnemyKilled(); return; }
 
+                // 味方の攻撃ターン
                 currentBattle.party.forEach((unit, idx) => {
+                    if (unit.hp <= 0) return;
+
+                    // 麻痺/スタンチェック
+                    if (unit.status === 'stun') {
+                        unit.status = null;
+                        return;
+                    }
+
                     const targets = currentBattle.enemies.map((e, i) => ({ enemy: e, index: i })).filter(item => item.enemy.hp > 0);
-                    if (unit.hp > 0 && targets.length > 0) {
+                    if (targets.length > 0) {
                         const targetItem = targets[Math.floor(Math.random() * targets.length)];
-                        let dmg = Math.floor(unit.atk * (0.85 + Math.random() * 0.3));
-                        targetItem.enemy.hp -= dmg;
                         
+                        // 属性相性計算
+                        const mult = getElementMultiplier(unit.element, targetItem.enemy.element);
+                        let isCrit = Math.random() < 0.2;
+                        let dmg = Math.floor(unit.atk * (0.85 + Math.random() * 0.3) * mult * (isCrit ? 1.5 : 1.0));
+                        
+                        if (unit.status === 'atk_up') dmg = Math.floor(dmg * 1.2);
+                        if (targetItem.enemy.status === 'def_down') dmg = Math.floor(dmg * 1.25);
+
+                        targetItem.enemy.hp -= dmg;
                         unit.skillGauge = Math.min(100, unit.skillGauge + 25);
-                        playSE('hit');
-                        showDamageNumberOnEnemy(targetItem.index, dmg, false);
+                        
+                        playSE(isCrit ? 'crit' : 'hit');
+                        let elemEff = mult > 1.0 ? 'weak' : (mult < 1.0 ? 'resist' : '');
+                        showDamageNumberOnEnemy(targetItem.index, dmg, isCrit, elemEff);
+                        
                         updateSingleEnemyHpUI(targetItem.index);
                         updatePartyBarsUI();
 
@@ -1513,6 +2020,7 @@
                             renderEnemiesRow();
                         }
 
+                        // スキルボタン有効化＆AUTO時発動
                         const btn = document.getElementById(`skill-btn-${idx}`);
                         if (unit.skillGauge >= 100) {
                             btn.className = 'gold-gradient text-slate-950 font-black rounded-xl p-1 md:p-2 text-[9px] sm:text-[10px] md:text-xs shadow-xl animate-pulse flex flex-col items-center justify-center leading-tight break-words h-full min-h-[2.5rem] md:min-h-[3.2rem] text-center';
@@ -1524,103 +2032,105 @@
 
                 if (currentBattle.enemies.every(e => e.hp <= 0)) { handleEnemyKilled(); return; }
 
+                // 敵の攻撃ターン
                 setTimeout(() => {
                     if (!currentBattle || !currentBattle.inProgress) return;
-                    const remainingEnemies = currentBattle.enemies.filter(e => e.hp > 0);
-                    const aliveParty = currentBattle.party.filter(u => u.hp > 0);
 
-                    if (remainingEnemies.length > 0 && aliveParty.length > 0) {
-                        remainingEnemies.forEach(e => {
-                            const target = aliveParty[Math.floor(Math.random() * aliveParty.length)];
-                            target.hp -= Math.floor(e.atk * 0.8);
-                        });
-                        updatePartyBarsUI();
-                        if (currentBattle.party.every(u => u.hp <= 0)) { handleDefeat(); return; }
+                    currentBattle.enemies.forEach((enemy, eIdx) => {
+                        if (enemy.hp <= 0) return;
+
+                        // 敵毒ダメージ
+                        if (enemy.status === 'poison') {
+                            const pDmg = Math.floor(enemy.maxHp * 0.08);
+                            enemy.hp -= pDmg;
+                            showDamageNumberOnEnemy(eIdx, pDmg, false, '');
+                            updateSingleEnemyHpUI(eIdx);
+                        }
+
+                        if (enemy.status === 'stun') {
+                            enemy.status = null;
+                            return;
+                        }
+
+                        const aliveParty = currentBattle.party.filter(u => u.hp > 0);
+                        if (aliveParty.length > 0) {
+                            const targetUnit = aliveParty[Math.floor(Math.random() * aliveParty.length)];
+                            const mult = getElementMultiplier(enemy.element, targetUnit.element);
+                            let eDmg = Math.floor(enemy.atk * (0.8 + Math.random() * 0.4) * mult);
+                            
+                            targetUnit.hp -= eDmg;
+                            playSE('hit');
+                            updatePartyBarsUI();
+                        }
                     }
+                    );
+
+                    // 味方全滅判定
+                    if (currentBattle.party.every(u => u.hp <= 0)) {
+                        currentBattle.inProgress = false;
+                        showCustomModal('敗北...', 'パーティが全滅しました。強化を行って再挑戦しましょう！');
+                        switchTab('quest');
+                        return;
+                    }
+
+                    // ターンループ継続
                     startTurnLoop();
-                }, delay);
+                }, delay / 2);
 
             }, delay);
         }
 
-        function triggerUnitSkill(idx) {
-            const unit = currentBattle.party[idx];
-            if (!unit || unit.skillGauge < 100) return;
-
-            const aliveTargets = currentBattle.enemies.map((e, i) => ({ enemy: e, index: i })).filter(item => item.enemy.hp > 0);
-            if (aliveTargets.length === 0) return;
-
-            unit.skillGauge = 0;
-            const btn = document.getElementById(`skill-btn-${idx}`);
-            btn.className = 'bg-slate-800 border border-slate-700 rounded-xl p-1 md:p-2 text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-400 opacity-50 flex flex-col items-center justify-center leading-tight break-words h-full min-h-[2.5rem] md:min-h-[3.2rem] text-center';
-            btn.disabled = true;
-
-            playSE('skill');
-
-            aliveTargets.forEach(item => {
-                let skillDmg = Math.floor(unit.atk * 3.0);
-                item.enemy.hp -= skillDmg;
-                showDamageNumberOnEnemy(item.index, skillDmg, true);
-                updateSingleEnemyHpUI(item.index);
-            });
-
-            updatePartyBarsUI();
-            
-            if (currentBattle.enemies.every(e => e.hp <= 0)) {
-                setTimeout(handleEnemyKilled, 400);
-            } else {
-                renderEnemiesRow();
-            }
-        }
-
         function handleEnemyKilled() {
+            if (!currentBattle || !currentBattle.inProgress) return;
+
             if (currentBattle.currentWaveIdx + 1 < currentBattle.totalWaves) {
-                setTimeout(() => loadWave(currentBattle.currentWaveIdx + 1), 600 / battleSpeed);
+                loadWave(currentBattle.currentWaveIdx + 1);
             } else {
-                handleVictory();
-            }
-        }
+                currentBattle.inProgress = false;
+                
+                // レイドの場合の処理
+                if (currentBattle.quest.isRaid) {
+                    const totalDmg = 150000 + Math.floor(Math.random() * 100000);
+                    playerData.raidDamage += totalDmg;
+                    raidBossHp = Math.max(0, raidBossHp - totalDmg);
+                    updateRaidBannerUI();
+                    showCustomModal('レイド戦完了！', `終焉巨神ベヒモスに 【${totalDmg.toLocaleString()}】 ダメージを与えました！\n累計ダメージ報酬として 500 ジュエルを獲得！`);
+                    playerData.gems += 500;
+                    addPlayerExp(currentBattle.quest.rewardExp);
+                    updateHeaderUI();
+                    switchTab('home');
+                    return;
+                }
 
-        function handleVictory() {
-            currentBattle.inProgress = false;
-            
-            if (currentBattle.quest.id === 999) {
-                if (!playerData.clearedTowerFloors.includes(playerData.towerFloor)) playerData.clearedTowerFloors.push(playerData.towerFloor);
-                playerData.towerFloor += 1;
-                playerData.gems += 300;
+                // 通常クエスト / タワーのクリア処理
+                const q = currentBattle.quest;
+                if (q.id === 999) { // タワークリア
+                    if (!playerData.clearedTowerFloors.includes(playerData.towerFloor)) {
+                        playerData.clearedTowerFloors.push(playerData.towerFloor);
+                        playerData.gems += q.rewardGems;
+                    }
+                    playerData.towerFloor += 1;
+                    addPlayerExp(q.rewardExp);
+                    showCustomModal('階層突破！', `試練のバベルタワー第 ${playerData.towerFloor - 1} 階層をクリアしました！\n報酬: ${q.rewardGems} ジュエル獲得！`);
+                    switchTab('tower');
+                } else {
+                    if (!playerData.clearedQuests.includes(q.id)) {
+                        playerData.clearedQuests.push(q.id);
+                        playerData.gems += q.rewardGems;
+                    }
+                    addPlayerExp(q.rewardExp);
+                    showCustomModal('VICTORY!', `ステージ「${q.name}」をクリアしました！\n報酬: ${q.rewardGems} ジュエル & Exp獲得！`);
+                    switchTab('quest');
+                }
                 updateHeaderUI();
-                showCustomModal('タワー突破！', `階層をクリアしました！\n次回よりこの階層で【倍速】が利用可能です。`);
-                setTimeout(() => switchTab('tower'), 1200);
-                return;
             }
-
-            if (!playerData.clearedQuests.includes(currentBattle.quest.id)) {
-                playerData.clearedQuests.push(currentBattle.quest.id);
-            }
-
-            let dropMsg = '';
-            if (Math.random() < 0.35) {
-                const droppedMaster = MASTER_RELICS[Math.floor(Math.random() * MASTER_RELICS.length)];
-                const droppedInst = addRelicToInventory(droppedMaster);
-                dropMsg = `\nレリックドロップ: 【${droppedInst.name}】を獲得！`;
-            }
-
-            playerData.gems += currentBattle.quest.rewardGems;
-            updateHeaderUI();
-
-            showCustomModal('VICTORY!', `クエストクリア！\n獲得ジュエル: +${currentBattle.quest.rewardGems}${dropMsg}\n次回より【倍速】が利用可能！`);
-            setTimeout(() => switchTab('quest'), 1400);
-        }
-
-        function handleDefeat() {
-            currentBattle.inProgress = false;
-            showCustomModal('DEFEAT...', '全滅しました。ユニットの強化・覚醒・レリック装備を行って再挑戦しましょう！');
-            setTimeout(() => switchTab('party'), 1200);
         }
 
         function retreatBattle() {
-            if (currentBattle) currentBattle.inProgress = false;
-            switchTab('quest');
+            showConfirmModal('撤退の確認', 'バトルから撤退しますか？（消費したAPは戻りません）', () => {
+                if (currentBattle) currentBattle.inProgress = false;
+                switchTab('quest');
+            });
         }
     </script>
 </body>
