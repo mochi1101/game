@@ -879,6 +879,10 @@
 
         // レイドボスHPはセーブデータに保持し、ホームへ戻っても同じ残量を表示する
         const RAID_BOSS_MAX_HP = 10000000;
+        // 全プレイヤー共通のレイドHPを管理するAPI。
+        // Cloudflare Workerをデプロイしたら、このURLをそのWorkerのURLに変更してください。
+        const RAID_SHARED_API_URL = 'https://arcana-raid.katagiri18760706.workers.dev';
+        let raidSharedApiReady = false;
         // 1回のレイド戦にダメージ上限は設けない。
         // 戦闘中のベヒモスHPをそのまま削り切った分だけ全体HPへ反映する。
         let raidBossHp = RAID_BOSS_MAX_HP;
@@ -891,6 +895,7 @@
             loadSavedData();
             checkDailyReset();
             updateDailyMissionAlert();
+            syncSharedRaidBossHp();
             document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
             document.getElementById('screen-title').classList.remove('hidden');
         };
@@ -970,14 +975,61 @@
             const navBtn = document.getElementById(`nav-${tabId}`);
             if(navBtn) navBtn.classList.add('text-amber-400', 'active-tab');
 
-            if(tabId === 'home') updateHomeDisplay();
+            if(tabId === 'home') {
+                updateHomeDisplay();
+                syncSharedRaidBossHp();
+            }
             if(tabId === 'quest') renderQuests();
             if(tabId === 'party') renderPartyUI();
             if(tabId === 'tower') renderTowerUI();
         }
 
+        async function syncSharedRaidBossHp(showError = false) {
+            if (!RAID_SHARED_API_URL || RAID_SHARED_API_URL.includes('YOUR-ARCANA-RAID-WORKER')) {
+                raidSharedApiReady = false;
+                if (showError) showCustomModal('レイド共有サーバー未設定', '全プレイヤー共通のレイドHPを使うには、HTML内の RAID_SHARED_API_URL に共有APIのURLを設定してください。');
+                return false;
+            }
+            try {
+                const res = await fetch(`${RAID_SHARED_API_URL.replace(/\/$/, '')}/raid`, { cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(data.hp)));
+                playerData.raidBossHp = raidBossHp;
+                raidSharedApiReady = true;
+                saveData();
+                updateRaidBannerUI();
+                return true;
+            } catch (e) {
+                raidSharedApiReady = false;
+                if (showError) showCustomModal('レイドサーバー接続エラー', '共通レイドHPを取得できませんでした。通信状態と共有APIの設定を確認してください。');
+                console.error('Shared raid HP sync failed:', e);
+                return false;
+            }
+        }
+
+        async function applySharedRaidDamage(damage) {
+            if (!raidSharedApiReady) return null;
+            try {
+                const res = await fetch(`${RAID_SHARED_API_URL.replace(/\/$/, '')}/raid/damage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ damage: Math.max(0, Math.floor(Number(damage) || 0)) })
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(data.hp)));
+                playerData.raidBossHp = raidBossHp;
+                saveData();
+                updateRaidBannerUI();
+                return data;
+            } catch (e) {
+                console.error('Shared raid damage update failed:', e);
+                return null;
+            }
+        }
+
         function updateHomeDisplay() {
-            raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(playerData.raidBossHp ?? raidBossHp)));
             const ownedKeys = Object.keys(playerData.inventory);
             if (ownedKeys.length === 0) return;
             const unit = MASTER_UNITS[ownedKeys[0]];
@@ -1683,7 +1735,7 @@
             document.getElementById('raid-modal').classList.remove('flex');
         }
 
-        function startRaidBattle() {
+        async function startRaidBattle() {
             if (playerData.raidTickets <= 0) {
                 showCustomModal('挑戦権不足', '本日のレイド戦参加回数がありません。明日また挑戦してください！');
                 return;
@@ -1691,8 +1743,9 @@
             const activeParty = playerData.party.filter(id => id !== null);
             if (activeParty.length === 0) { showCustomModal('エラー', '出撃パーティを編成してください。'); return; }
 
-            // 保存済みの全体HPを必ず読み直してから戦闘開始
-            raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(playerData.raidBossHp ?? RAID_BOSS_MAX_HP)));
+            // 戦闘開始直前にサーバーの共通HPを取得する。
+            const synced = await syncSharedRaidBossHp(true);
+            if (!synced) return;
             if (raidBossHp <= 0) {
                 showCustomModal('レイド討伐完了', '終焉巨神ベヒモスはすでに討伐されています！');
                 return;
@@ -1705,11 +1758,9 @@
 
             const raidQuest = {
                 id: 888, isRaid: true, name: 'レイド：終焉巨神ベヒモス', ap: 0, rewardExp: 200, rewardGems: 500, raidStartHp: raidBossHp,
-                // 1戦で倒せる戦闘用HP。討伐後に全体レイドHPから150,000～250,000減らす。
+                // 共通HPそのものを戦闘HPにする。1戦のダメージ上限はなし。
                 waves: [{
                     enemies: [{
-                        // 現在の全体レイドHPをそのまま戦闘HPにするため、1戦のダメージ上限はなし。
-                        // ソロでも削り切れば、その時点でベヒモスを討伐できる。
                         type: 'behemoth', name: '終焉巨神ベヒモス', hp: raidBossHp, atk: 180, isBoss: true
                     }]
                 }]
@@ -2138,7 +2189,7 @@
             }, delay);
         }
 
-        function handleEnemyKilled() {
+        async function handleEnemyKilled() {
             if (!currentBattle || !currentBattle.inProgress) return;
 
             if (currentBattle.currentWaveIdx + 1 < currentBattle.totalWaves) {
@@ -2148,16 +2199,23 @@
                 
                 // レイドの場合の処理
                 if (currentBattle.quest.isRaid) {
-                    // 1戦のダメージ上限は設けない。
-                    // 戦闘開始時のベヒモスHPを削り切った場合は、その全量をレイドダメージとして反映する。
+                    // 戦闘で実際に削った量を共有サーバーへ送る。
+                    // サーバー側で現在の共通HPを上限として原子的に反映するため、
+                    // 複数プレイヤーが同時に討伐してもHPがマイナスにならない。
                     const totalDmg = Math.max(0, Number(currentBattle.quest.raidStartHp ?? 0));
-                    playerData.raidDamage += totalDmg;
-                    raidBossHp = Math.max(0, raidBossHp - totalDmg);
+                    const sharedResult = await applySharedRaidDamage(totalDmg);
+                    if (!sharedResult) {
+                        // 共有HPを更新できない場合は、二重計上を避けるため報酬処理を止める。
+                        showCustomModal('レイド通信エラー', 'レイドHPの共有更新に失敗しました。報酬処理を中断しました。通信を確認してから再度お試しください。');
+                        return;
+                    }
+                    const appliedDmg = Math.max(0, Number(sharedResult.damage ?? totalDmg));
+                    playerData.raidDamage += appliedDmg;
+                    raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(sharedResult.hp)));
                     playerData.raidBossHp = raidBossHp;
-                    // HPを減らした直後に保存する（ホームへ戻る前に永続化）
                     saveData();
                     updateRaidBannerUI();
-                    showCustomModal('レイド戦完了！', `終焉巨神ベヒモスに 【${totalDmg.toLocaleString()}】 ダメージを与えました！\n残りHP：${raidBossHp.toLocaleString()} / ${RAID_BOSS_MAX_HP.toLocaleString()}\n累計ダメージ報酬として 500 ジュエルを獲得！`);
+                    showCustomModal('レイド戦完了！', `終焉巨神ベヒモスに 【${appliedDmg.toLocaleString()}】 ダメージを与えました！\n全プレイヤー共通の残りHP：${raidBossHp.toLocaleString()} / ${RAID_BOSS_MAX_HP.toLocaleString()}${Number(sharedResult.hp) <= 0 ? '\nベヒモス討伐！' : ''}\n累計ダメージ報酬として 500 ジュエルを獲得！`);
                     playerData.gems += 500;
                     addPlayerExp(currentBattle.quest.rewardExp);
                     saveData();
