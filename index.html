@@ -297,7 +297,8 @@
 
                 <div class="w-full md:w-80 flex flex-col space-y-2 md:space-y-3 z-10 shrink-0 pb-2 md:pb-0">
                     <!-- デイリーミッション＆ログインボーナスボタン -->
-                    <button onclick="openMissionsModal()" class="bg-gradient-to-r from-emerald-900/90 to-teal-900/90 border border-emerald-500/50 hover:border-emerald-400 rounded-2xl p-3 flex items-center justify-between shadow-xl transition active:scale-95">
+                    <button onclick="openMissionsModal()" class="relative bg-gradient-to-r from-emerald-900/90 to-teal-900/90 border border-emerald-500/50 hover:border-emerald-400 rounded-2xl p-3 flex items-center justify-between shadow-xl transition active:scale-95">
+                        <div id="daily-mission-alert" class="hidden absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 border-2 border-slate-950 text-white text-sm font-black items-center justify-center shadow-lg z-20">!</div>
                         <div class="flex items-center space-x-3">
                             <i class="fa-solid fa-list-check text-emerald-400 text-2xl"></i>
                             <div class="text-left">
@@ -878,9 +879,8 @@
 
         // レイドボスHPはセーブデータに保持し、ホームへ戻っても同じ残量を表示する
         const RAID_BOSS_MAX_HP = 10000000;
-        // 画面上の全体レイドHPとは別に、1回の戦闘で倒せる仮想HPを使う
-        // （全体HPが1000万のままだと通常パーティでは1戦で倒せないため）
-        const RAID_BATTLE_HP = 10000;
+        // 1回のレイド戦にダメージ上限は設けない。
+        // 戦闘中のベヒモスHPをそのまま削り切った分だけ全体HPへ反映する。
         let raidBossHp = RAID_BOSS_MAX_HP;
 
         let currentGachaType = 'char';
@@ -890,6 +890,7 @@
         window.onload = function() {
             loadSavedData();
             checkDailyReset();
+            updateDailyMissionAlert();
             document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
             document.getElementById('screen-title').classList.remove('hidden');
         };
@@ -1588,6 +1589,21 @@
             document.getElementById('missions-modal').classList.remove('flex');
         }
 
+        function hasClaimableDailyMission() {
+            const p = playerData.dailyProgress;
+            return (1 >= 1 && !p.claimedLogin) ||
+                   (p.questCount >= 3 && !p.claimedQuest) ||
+                   (p.gachaCount >= 1 && !p.claimedGacha);
+        }
+
+        function updateDailyMissionAlert() {
+            const alert = document.getElementById('daily-mission-alert');
+            if (!alert) return;
+            const show = hasClaimableDailyMission();
+            alert.classList.toggle('hidden', !show);
+            alert.classList.toggle('flex', show);
+        }
+
         function renderMissionsUI() {
             const list = document.getElementById('missions-list');
             list.innerHTML = '';
@@ -1614,11 +1630,13 @@
                 `;
                 list.appendChild(div);
             });
+            updateDailyMissionAlert();
         }
 
         function claimLoginReward() {
             playerData.dailyProgress.claimedLogin = true;
             playerData.gems += 100;
+            saveData();
             updateHeaderUI();
             renderMissionsUI();
             showCustomModal('報酬獲得', 'ログインボーナス 100ジュエルを獲得しました！');
@@ -1626,6 +1644,7 @@
         function claimQuestReward() {
             playerData.dailyProgress.claimedQuest = true;
             playerData.gems += 150;
+            saveData();
             updateHeaderUI();
             renderMissionsUI();
             showCustomModal('報酬獲得', 'デイリーミッション報酬 150ジュエルを獲得しました！');
@@ -1633,6 +1652,7 @@
         function claimGachaReward() {
             playerData.dailyProgress.claimedGacha = true;
             playerData.crystals += 20;
+            saveData();
             updateHeaderUI();
             renderMissionsUI();
             showCustomModal('報酬獲得', 'デイリーミッション報酬 20クリスタルを獲得しました！');
@@ -1684,11 +1704,13 @@
             closeRaidModal();
 
             const raidQuest = {
-                id: 888, isRaid: true, name: 'レイド：終焉巨神ベヒモス', ap: 0, rewardExp: 200, rewardGems: 500,
+                id: 888, isRaid: true, name: 'レイド：終焉巨神ベヒモス', ap: 0, rewardExp: 200, rewardGems: 500, raidStartHp: raidBossHp,
                 // 1戦で倒せる戦闘用HP。討伐後に全体レイドHPから150,000～250,000減らす。
                 waves: [{
                     enemies: [{
-                        type: 'behemoth', name: '終焉巨神ベヒモス', hp: Math.min(raidBossHp, RAID_BATTLE_HP), atk: 180, isBoss: true
+                        // 現在の全体レイドHPをそのまま戦闘HPにするため、1戦のダメージ上限はなし。
+                        // ソロでも削り切れば、その時点でベヒモスを討伐できる。
+                        type: 'behemoth', name: '終焉巨神ベヒモス', hp: raidBossHp, atk: 180, isBoss: true
                     }]
                 }]
             };
@@ -2126,9 +2148,9 @@
                 
                 // レイドの場合の処理
                 if (currentBattle.quest.isRaid) {
-                    // 1戦ごとに確実に全体レイドHPを減らす
-                    const requestedDmg = 150000 + Math.floor(Math.random() * 100000);
-                    const totalDmg = Math.min(requestedDmg, raidBossHp);
+                    // 1戦のダメージ上限は設けない。
+                    // 戦闘開始時のベヒモスHPを削り切った場合は、その全量をレイドダメージとして反映する。
+                    const totalDmg = Math.max(0, Number(currentBattle.quest.raidStartHp ?? 0));
                     playerData.raidDamage += totalDmg;
                     raidBossHp = Math.max(0, raidBossHp - totalDmg);
                     playerData.raidBossHp = raidBossHp;
