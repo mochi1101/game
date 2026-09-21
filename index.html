@@ -898,6 +898,12 @@
             syncSharedRaidBossHp();
             document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
             document.getElementById('screen-title').classList.remove('hidden');
+            // ホーム画面などを開いたままでも、他プレイヤーの討伐状況を定期反映する。
+            setInterval(() => {
+                if (document.visibilityState === 'visible' && !document.hidden) {
+                    syncSharedRaidBossHp(false);
+                }
+            }, 10000);
         };
 
         function checkDailyReset() {
@@ -1009,16 +1015,19 @@
         }
 
         async function applySharedRaidDamage(damage) {
-            if (!raidSharedApiReady) return null;
+            const amount = Math.max(0, Math.floor(Number(damage) || 0));
+            if (amount <= 0) return null;
             try {
                 const res = await fetch(`${RAID_SHARED_API_URL.replace(/\/$/, '')}/raid/damage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ damage: Math.max(0, Math.floor(Number(damage) || 0)) })
+                    body: JSON.stringify({ damage: amount })
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
+                if (!Number.isFinite(Number(data.hp))) throw new Error('Invalid raid HP response');
                 raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(data.hp)));
+                raidSharedApiReady = true;
                 playerData.raidBossHp = raidBossHp;
                 saveData();
                 updateRaidBannerUI();
@@ -1714,8 +1723,11 @@
             const bar = document.getElementById('raid-boss-hp-bar');
             const txt = document.getElementById('raid-boss-hp-text');
             if (bar && txt) {
-                // レイドHPはplayerDataを唯一の保存元にする
-                raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(playerData.raidBossHp ?? RAID_BOSS_MAX_HP)));
+                // 共通レイドではCloudflare/D1から取得したraidBossHpを正とする。
+                // API取得前だけローカル保存値を初期表示に使う。
+                if (!raidSharedApiReady) {
+                    raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(playerData.raidBossHp ?? RAID_BOSS_MAX_HP)));
+                }
                 playerData.raidBossHp = raidBossHp;
                 const pct = Math.max(0, (raidBossHp / RAID_BOSS_MAX_HP) * 100);
                 bar.style.width = `${pct}%`;
@@ -2202,7 +2214,9 @@
                     // 戦闘で実際に削った量を共有サーバーへ送る。
                     // サーバー側で現在の共通HPを上限として原子的に反映するため、
                     // 複数プレイヤーが同時に討伐してもHPがマイナスにならない。
-                    const totalDmg = Math.max(0, Number(currentBattle.quest.raidStartHp ?? 0));
+                    const startHp = Math.max(0, Number(currentBattle.quest.raidStartHp ?? 0));
+                    const endHp = Math.max(0, Number(currentBattle.enemies?.[0]?.hp ?? 0));
+                    const totalDmg = Math.max(0, Math.floor(startHp - endHp));
                     const sharedResult = await applySharedRaidDamage(totalDmg);
                     if (!sharedResult) {
                         // 共有HPを更新できない場合は、二重計上を避けるため報酬処理を止める。
@@ -2236,24 +2250,4 @@
                     showCustomModal('階層突破！', `試練のバベルタワー第 ${playerData.towerFloor - 1} 階層をクリアしました！\n報酬: ${q.rewardGems} ジュエル獲得！`);
                     switchTab('tower');
                 } else {
-                    if (!playerData.clearedQuests.includes(q.id)) {
-                        playerData.clearedQuests.push(q.id);
-                        playerData.gems += q.rewardGems;
-                    }
-                    addPlayerExp(q.rewardExp);
-                    showCustomModal('VICTORY!', `ステージ「${q.name}」をクリアしました！\n報酬: ${q.rewardGems} ジュエル & Exp獲得！`);
-                    switchTab('quest');
-                }
-                updateHeaderUI();
-            }
-        }
-
-        function retreatBattle() {
-            showConfirmModal('撤退の確認', 'バトルから撤退しますか？（消費したAPは戻りません）', () => {
-                if (currentBattle) currentBattle.inProgress = false;
-                switchTab('quest');
-            });
-        }
-    </script>
-</body>
-</html>
+                    if (!playerData
