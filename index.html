@@ -151,6 +151,23 @@
             transform: scale(1.12);
         }
 
+        .friend-nav-icon {
+            height: clamp(40px, 6.4vh, 54px);
+            width: clamp(40px, 6.4vh, 54px);
+            object-fit: contain;
+            transition: transform 0.2s, filter 0.2s;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+        }
+        .nav-btn.active-tab .friend-nav-icon {
+            filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.95));
+            transform: scale(1.08);
+        }
+        .friend-card {
+            background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(30,41,59,0.9));
+            border: 1px solid rgba(56,189,248,0.28);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        }
+
         .gacha-bg-flash {
             background-image: url('lucid-origin_A_flashy_gacha_screen_background_for_a_mobile_game_inspired_by_the_art_styles_of-0.jpg');
             background-size: cover;
@@ -325,6 +342,64 @@
                             <div class="text-xs md:text-sm font-black text-white">全8章 クエスト討伐</div>
                             <div class="text-[9px] md:text-[10px] text-slate-400 mt-0.5">装備ドロップ & 章順次解放</div>
                         </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FRIENDS -->
+            <section id="screen-friends" class="view-screen absolute inset-0 hidden p-3 md:p-5 bg-gradient-to-b from-slate-950 via-cyan-950/20 to-slate-950 overflow-y-auto">
+                <div class="max-w-4xl mx-auto w-full">
+                    <div class="flex items-center justify-between mb-3 md:mb-4">
+                        <div>
+                            <h2 class="text-xl md:text-3xl font-black text-cyan-300 font-cinzel tracking-widest">FRIENDS</h2>
+                            <p class="text-[10px] md:text-xs text-slate-400 mt-0.5">仲間を追加して、フレンド一覧を管理できます。</p>
+                        </div>
+                        <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-slate-900 border border-cyan-400/30 p-1.5 shadow-xl">
+                            <img src="Designer3(1).png" alt="フレンド" class="w-full h-full object-contain">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                        <div class="md:col-span-1 space-y-3">
+                            <div class="friend-card rounded-2xl p-4">
+                                <div class="text-[10px] text-cyan-300 font-black tracking-widest mb-2">MY FRIEND CODE</div>
+                                <div class="flex items-center gap-2">
+                                    <div id="my-friend-code" class="flex-1 bg-slate-950 rounded-xl border border-slate-700 px-3 py-2 text-center text-lg font-black font-mono text-white tracking-widest">--------</div>
+                                    <button onclick="copyFriendCode()" class="w-10 h-10 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center shadow-lg active:scale-95 transition" title="フレンドコードをコピー">
+                                        <i class="fa-solid fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="text-[9px] text-slate-500 mt-2 leading-relaxed">このコードを友達に伝えて追加してもらえます。</div>
+                            </div>
+
+                            <div class="friend-card rounded-2xl p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="text-xs font-black text-white">オンラインフレンド追加</div>
+                                    <span id="friend-online-status" class="text-[9px] px-2 py-1 rounded-full bg-slate-800 text-slate-500 border border-slate-700">未接続</span>
+                                </div>
+                                <input id="friend-add-code" type="text" inputmode="numeric" maxlength="8" placeholder="8桁のコード" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2.5 text-sm text-white text-center font-mono tracking-widest outline-none mb-2">
+                                <button onclick="addFriendFromCode()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-sm py-2.5 rounded-xl shadow-lg active:scale-95 transition">
+                                    <i class="fa-solid fa-user-plus mr-1"></i>フレンド追加
+                                </button>
+                                <div class="text-[9px] text-slate-500 mt-2 leading-relaxed">友達の8桁コードを入力すると、サーバー上で相互フレンドになります。相手の名前はサーバーから取得します。</div>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <div class="friend-card rounded-2xl p-4 min-h-[320px]">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-user-group text-cyan-400"></i>
+                                        <span class="text-sm font-black text-white">フレンド一覧</span>
+                                        <span id="friend-count" class="text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full">0</span>
+                                    </div>
+                                    <button onclick="refreshOnlineFriends()" class="text-[10px] text-slate-400 hover:text-white transition">
+                                        <i class="fa-solid fa-rotate-right mr-1"></i>オンライン更新
+                                    </button>
+                                </div>
+                                <div id="friends-list" class="space-y-2"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -602,6 +677,9 @@
             <button onclick="switchTab('party')" id="nav-party" class="nav-btn flex flex-col items-center text-slate-400 hover:text-amber-300 transition px-2 py-0">
                 <img src="ChatGPT Image 2026年9月21日 08_24_09 (1).png" alt="編成・強化" class="nav-custom-img-icon">
             </button>
+            <button onclick="switchTab('friends')" id="nav-friends" class="nav-btn flex flex-col items-center text-slate-400 hover:text-amber-300 transition px-1 py-0">
+                <img src="Designer3(1).png" alt="フレンド" class="friend-nav-icon">
+            </button>
         </nav>
 
         <!-- Gacha Summon Animated Modal -->
@@ -679,6 +757,7 @@
 
     </div>
 
+    <script src="friends-config.js"></script>
     <script>
         let audioEnabled = true;
         let audioCtx = null;
@@ -872,6 +951,9 @@
                 'iris': { level: 1, awaken: 0, skillLevel: 1, equippedRelicInstanceId: null }
             },
             relics: [],
+            // フレンド機能（端末内保存）
+            friendCode: '',
+            friends: [],
             // デイリーミッション＆ログインボーナス
             dailyProgress: {
                 lastLoginDate: '',
@@ -950,20 +1032,28 @@
             updateHeaderUI();
             updateHomeDisplay();
             renderQuests();
+            registerOnlineAccount(false);
             renderPartyUI();
             renderTowerUI();
+            renderFriendsUI();
             switchTab('home');
         }
 
         function saveData() {
-            try { localStorage.setItem('arcana_connect_save_v15', JSON.stringify(playerData)); } catch(e){}
+            try { localStorage.setItem('arcana_connect_save_v16', JSON.stringify(playerData)); } catch(e){}
         }
 
         function loadSavedData() {
             try {
-                const saved = localStorage.getItem('arcana_connect_save_v15') || localStorage.getItem('arcana_connect_save_v14');
+                const saved = localStorage.getItem('arcana_connect_save_v16') || localStorage.getItem('arcana_connect_save_v15') || localStorage.getItem('arcana_connect_save_v14');
                 if(saved) playerData = { ...playerData, ...JSON.parse(saved) };
             } catch(e){}
+
+            if (!Array.isArray(playerData.friends)) playerData.friends = [];
+            if (!playerData.friendCode || !/^\d{8}$/.test(String(playerData.friendCode))) {
+                playerData.friendCode = String(Math.floor(10000000 + Math.random() * 90000000));
+                saveData();
+            }
 
             // 旧セーブにはレイドボスHPがないため、最大値から開始する
             raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(playerData.raidBossHp ?? RAID_BOSS_MAX_HP)));
@@ -988,6 +1078,223 @@
             if(tabId === 'quest') renderQuests();
             if(tabId === 'party') renderPartyUI();
             if(tabId === 'tower') renderTowerUI();
+            if(tabId === 'friends') { renderFriendsUI(); refreshOnlineFriends(false); }
+        }
+
+        function getFriendApiUrl() {
+            return String(FRIEND_API_URL || '').replace(/\/$/, '');
+        }
+
+        function getFriendAuthToken() {
+            let token = '';
+            try { token = localStorage.getItem(FRIEND_TOKEN_KEY) || ''; } catch (e) {}
+            if (!token || token.length < 20) {
+                token = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}-${Math.random()}`) + '-' + Math.random().toString(36).slice(2);
+                try { localStorage.setItem(FRIEND_TOKEN_KEY, token); } catch (e) {}
+            }
+            return token;
+        }
+
+        function setFriendOnlineStatus(text, online) {
+            const el = document.getElementById('friend-online-status');
+            if (!el) return;
+            el.innerText = text;
+            el.className = online
+                ? 'text-[9px] px-2 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/30'
+                : 'text-[9px] px-2 py-1 rounded-full bg-slate-800 text-slate-500 border border-slate-700';
+        }
+
+        async function friendApi(path, options = {}) {
+            const base = getFriendApiUrl();
+            if (!base) throw new Error('FRIEND_API_URL未設定');
+            const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+            headers.Authorization = `Bearer ${getFriendAuthToken()}`;
+            const res = await fetch(`${base}${path}`, { ...options, headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const err = new Error(data.message || data.error || `HTTP ${res.status}`);
+                err.status = res.status;
+                err.data = data;
+                throw err;
+            }
+            return data;
+        }
+
+        async function registerOnlineAccount(showErrors = false) {
+            if (!getFriendApiUrl()) {
+                setFriendOnlineStatus('未接続', false);
+                return false;
+            }
+            try {
+                const data = await friendApi('/v1/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ name: playerData.name || '召喚士', token: getFriendAuthToken() })
+                });
+                if (data.player?.friend_code) {
+                    playerData.friendCode = String(data.player.friend_code);
+                    saveData();
+                }
+                setFriendOnlineStatus('オンライン', true);
+                return true;
+            } catch (e) {
+                setFriendOnlineStatus('接続失敗', false);
+                if (showErrors) showCustomModal('オンライン接続エラー', 'フレンドサーバーに接続できませんでした。WorkerのURLとD1設定を確認してください。');
+                return false;
+            }
+        }
+
+        function ensureFriendCode() {
+            if (!playerData.friendCode || !/^\d{8}$/.test(String(playerData.friendCode))) {
+                playerData.friendCode = String(Math.floor(10000000 + Math.random() * 90000000));
+                saveData();
+            }
+            return String(playerData.friendCode);
+        }
+
+        function renderFriendsUI() {
+            ensureFriendCode();
+            const codeEl = document.getElementById('my-friend-code');
+            const countEl = document.getElementById('friend-count');
+            const listEl = document.getElementById('friends-list');
+            if (!codeEl || !countEl || !listEl) return;
+
+            codeEl.innerText = playerData.friendCode;
+            const friends = Array.isArray(playerData.friends) ? playerData.friends : [];
+            countEl.innerText = friends.length;
+
+            if (friends.length === 0) {
+                listEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center min-h-[230px] text-center">
+                        <div class="w-16 h-16 rounded-full bg-cyan-950/60 border border-cyan-500/20 flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-user-group text-2xl text-cyan-500/70"></i>
+                        </div>
+                        <div class="text-sm font-black text-slate-300">まだフレンドがいません</div>
+                        <div class="text-[10px] text-slate-500 mt-1">友達の8桁コードを入力して追加できます。</div>
+                    </div>`;
+                return;
+            }
+
+            listEl.innerHTML = friends.map((friend, index) => `
+                <div class="flex items-center gap-3 bg-slate-950/75 border border-slate-800 rounded-2xl p-3">
+                    <div class="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center shrink-0 shadow-lg">
+                        <i class="fa-solid fa-user text-white"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-sm font-black text-white truncate">${escapeHtml(friend.name || 'フレンド')}</div>
+                        <div class="text-[10px] text-slate-500 font-mono">ID: ${escapeHtml(friend.code)}</div>
+                    </div>
+                    <button onclick="removeFriend(${index})" class="w-9 h-9 rounded-xl bg-rose-950/70 border border-rose-800/50 text-rose-300 hover:text-white hover:bg-rose-900 transition" title="フレンド削除">
+                        <i class="fa-solid fa-user-minus text-xs"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+            }[ch]));
+        }
+
+        async function refreshOnlineFriends(showErrors = false) {
+            renderFriendsUI();
+            if (!getFriendApiUrl() || friendOnlineBusy) return false;
+            friendOnlineBusy = true;
+            setFriendOnlineStatus('同期中…', true);
+            try {
+                await registerOnlineAccount(false);
+                const data = await friendApi('/v1/friends');
+                playerData.friends = Array.isArray(data.friends) ? data.friends.map(f => ({
+                    code: String(f.code),
+                    name: String(f.name || 'フレンド'),
+                    addedAt: ''
+                })) : [];
+                saveData();
+                renderFriendsUI();
+                setFriendOnlineStatus('オンライン', true);
+                return true;
+            } catch (e) {
+                setFriendOnlineStatus('接続失敗', false);
+                if (showErrors) showCustomModal('更新エラー', 'フレンド情報を取得できませんでした。');
+                return false;
+            } finally {
+                friendOnlineBusy = false;
+            }
+        }
+
+        async function addFriendFromCode() {
+            const codeInput = document.getElementById('friend-add-code');
+            const code = (codeInput?.value || '').replace(/\D/g, '');
+            if (!/^\d{8}$/.test(code)) {
+                showCustomModal('入力エラー', '8桁のフレンドコードを入力してください。');
+                return;
+            }
+            if (code === ensureFriendCode()) {
+                showCustomModal('追加できません', '自分自身のフレンドコードは追加できません。');
+                return;
+            }
+            if (!getFriendApiUrl()) {
+                showCustomModal('オンライン未設定', 'フレンドWorkerのURLがまだ設定されていません。');
+                return;
+            }
+            try {
+                setFriendOnlineStatus('追加中…', true);
+                await registerOnlineAccount(true);
+                const data = await friendApi('/v1/friends/add', {
+                    method: 'POST',
+                    body: JSON.stringify({ code })
+                });
+                if (!Array.isArray(playerData.friends)) playerData.friends = [];
+                playerData.friends = playerData.friends.filter(f => String(f.code) !== code);
+                playerData.friends.push({
+                    code: String(data.friend.code),
+                    name: String(data.friend.name || 'フレンド'),
+                    addedAt: new Date().toISOString()
+                });
+                saveData();
+                codeInput.value = '';
+                renderFriendsUI();
+                setFriendOnlineStatus('オンライン', true);
+                playSE('heal');
+                showCustomModal('フレンド追加', `${data.friend.name || 'フレンド'} をオンラインで追加しました。`);
+            } catch (e) {
+                setFriendOnlineStatus('接続失敗', false);
+                const message = e?.data?.message || 'フレンド追加に失敗しました。';
+                showCustomModal('フレンド追加', message);
+            }
+        }
+
+        async function removeFriend(index) {
+            const friend = playerData.friends[index];
+            if (!friend) return;
+            showConfirmModal('フレンド削除', `${friend.name || 'このフレンド'}を削除しますか？`, async () => {
+                if (!getFriendApiUrl()) {
+                    playerData.friends.splice(index, 1);
+                    saveData();
+                    renderFriendsUI();
+                    return;
+                }
+                try {
+                    await friendApi(`/v1/friends?code=${encodeURIComponent(friend.code)}`, { method: 'DELETE' });
+                    playerData.friends.splice(index, 1);
+                    saveData();
+                    renderFriendsUI();
+                    setFriendOnlineStatus('オンライン', true);
+                } catch (e) {
+                    showCustomModal('削除エラー', 'オンライン上のフレンド削除に失敗しました。');
+                }
+            });
+        }
+
+        async function copyFriendCode() {
+            await registerOnlineAccount(false);
+            const code = ensureFriendCode();
+            try {
+                await navigator.clipboard.writeText(code);
+                showCustomModal('コピー完了', `フレンドコード「${code}」をコピーしました。`);
+            } catch (e) {
+                showCustomModal('フレンドコード', `あなたのフレンドコードは\n${code}\nです。`);
+            }
         }
 
         function updateHomeDisplay() {
@@ -1764,6 +2071,12 @@
         // 既に作成したWorkerのURLをここに設定してください。
         // もし既存のWorker URLがHTML内に設定済みなら、その値をそのまま使用します。
         const RAID_API_URL = window.RAID_API_URL || 'https://arcana-raid.katagiri18760706.workers.dev';
+
+        // オンラインフレンドAPI。Cloudflare Workerをデプロイ後、このURLを設定してください。
+        // 例: window.FRIEND_API_URL = 'https://arcana-friends.your-subdomain.workers.dev';
+        const FRIEND_API_URL = window.FRIEND_API_URL || 'https://arcana-friends.katagiri18760706.workers.dev';
+        const FRIEND_TOKEN_KEY = 'arcana_connect_friend_auth_v1';
+        let friendOnlineBusy = false;
 
         let raidHpSyncInFlight = false;
 
