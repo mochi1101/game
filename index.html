@@ -377,11 +377,11 @@
                                     <div class="text-xs font-black text-white">オンラインフレンド追加</div>
                                     <span id="friend-online-status" class="text-[9px] px-2 py-1 rounded-full bg-slate-800 text-slate-500 border border-slate-700">未接続</span>
                                 </div>
-                                <input id="friend-add-code" type="text" inputmode="numeric" maxlength="8" placeholder="8桁のコード" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2.5 text-sm text-white text-center font-mono tracking-widest outline-none mb-2">
+                                <input id="friend-add-code" type="text" inputmode="text" maxlength="8" placeholder="8文字のコード" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2.5 text-sm text-white text-center font-mono tracking-widest outline-none mb-2">
                                 <button onclick="addFriendFromCode()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-sm py-2.5 rounded-xl shadow-lg active:scale-95 transition">
                                     <i class="fa-solid fa-user-plus mr-1"></i>フレンド追加
                                 </button>
-                                <div class="text-[9px] text-slate-500 mt-2 leading-relaxed">友達の8桁コードを入力すると、サーバー上で相互フレンドになります。相手の名前はサーバーから取得します。</div>
+                                <div class="text-[9px] text-slate-500 mt-2 leading-relaxed">友達の8文字コードを入力すると、サーバー上でフレンド申請できます。相手の名前はサーバーから取得します。</div>
                             </div>
                         </div>
 
@@ -1121,34 +1121,58 @@
         }
 
         async function registerOnlineAccount(showErrors = false) {
-            if (!getFriendApiUrl()) {
+            const base = getFriendApiUrl();
+            if (!base) {
                 setFriendOnlineStatus('未接続', false);
                 return false;
             }
-            try {
-                const data = await friendApi('/v1/register', {
-                    method: 'POST',
-                    body: JSON.stringify({ name: playerData.name || '召喚士', token: getFriendAuthToken() })
-                });
-                if (data.player?.friend_code) {
-                    playerData.friendCode = String(data.player.friend_code);
-                    saveData();
+
+            // 既存トークンがあれば /me で復元
+            let token = '';
+            try { token = localStorage.getItem(FRIEND_TOKEN_KEY) || ''; } catch (e) {}
+            if (token) {
+                try {
+                    const data = await friendApi('/me');
+                    if (data.player?.friend_code) {
+                        playerData.friendCode = String(data.player.friend_code);
+                        if (data.player.id) playerData.onlinePlayerId = String(data.player.id);
+                        saveData();
+                    }
+                    setFriendOnlineStatus('オンライン', true);
+                    return true;
+                } catch (e) {
+                    try { localStorage.removeItem(FRIEND_TOKEN_KEY); } catch (e2) {}
                 }
+            }
+
+            // 新規登録。Workerが発行したtokenを保存して以後のAPI認証に使う
+            try {
+                const res = await fetch(`${base}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: playerData.name || '召喚士' })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.token || !data.playerId || !data.friendCode) {
+                    const err = new Error(data.message || data.error || `HTTP ${res.status}`);
+                    err.data = data;
+                    throw err;
+                }
+                try { localStorage.setItem(FRIEND_TOKEN_KEY, String(data.token)); } catch (e) {}
+                playerData.onlinePlayerId = String(data.playerId);
+                playerData.friendCode = String(data.friendCode);
+                saveData();
                 setFriendOnlineStatus('オンライン', true);
                 return true;
             } catch (e) {
                 setFriendOnlineStatus('接続失敗', false);
-                if (showErrors) showCustomModal('オンライン接続エラー', 'フレンドサーバーに接続できませんでした。WorkerのURLとD1設定を確認してください。');
+                if (showErrors) showCustomModal('オンライン接続エラー', e?.data?.message || e?.data?.error || 'フレンドサーバーに接続できませんでした。');
                 return false;
             }
         }
 
         function ensureFriendCode() {
-            if (!playerData.friendCode || !/^\d{8}$/.test(String(playerData.friendCode))) {
-                playerData.friendCode = String(Math.floor(10000000 + Math.random() * 90000000));
-                saveData();
-            }
-            return String(playerData.friendCode);
+            return String(playerData.friendCode || '--------');
         }
 
         function renderFriendsUI() {
@@ -1203,9 +1227,10 @@
             setFriendOnlineStatus('同期中…', true);
             try {
                 await registerOnlineAccount(false);
-                const data = await friendApi('/v1/friends');
+                const data = await friendApi('/friends');
                 playerData.friends = Array.isArray(data.friends) ? data.friends.map(f => ({
-                    code: String(f.code),
+                    id: String(f.id),
+                    code: String(f.friend_code),
                     name: String(f.name || 'フレンド'),
                     addedAt: ''
                 })) : [];
@@ -1224,13 +1249,9 @@
 
         async function addFriendFromCode() {
             const codeInput = document.getElementById('friend-add-code');
-            const code = (codeInput?.value || '').replace(/\D/g, '');
-            if (!/^\d{8}$/.test(code)) {
-                showCustomModal('入力エラー', '8桁のフレンドコードを入力してください。');
-                return;
-            }
-            if (code === ensureFriendCode()) {
-                showCustomModal('追加できません', '自分自身のフレンドコードは追加できません。');
+            const code = (codeInput?.value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (!/^[A-Z0-9]{8}$/.test(code)) {
+                showCustomModal('入力エラー', '8文字のフレンドコードを入力してください。');
                 return;
             }
             if (!getFriendApiUrl()) {
@@ -1239,16 +1260,29 @@
             }
             try {
                 setFriendOnlineStatus('追加中…', true);
-                await registerOnlineAccount(true);
-                const data = await friendApi('/v1/friends/add', {
+                if (!await registerOnlineAccount(true)) return;
+                if (code === ensureFriendCode()) {
+                    showCustomModal('追加できません', '自分自身のフレンドコードは追加できません。');
+                    return;
+                }
+
+                const search = await friendApi(`/search?code=${encodeURIComponent(code)}`);
+                if (!search.found || !search.player?.id) {
+                    showCustomModal('フレンド追加', search.self ? '自分自身のフレンドコードは追加できません。' : 'そのフレンドコードのプレイヤーが見つかりません。');
+                    return;
+                }
+
+                await friendApi('/request', {
                     method: 'POST',
-                    body: JSON.stringify({ code })
+                    body: JSON.stringify({ targetId: search.player.id })
                 });
+
                 if (!Array.isArray(playerData.friends)) playerData.friends = [];
-                playerData.friends = playerData.friends.filter(f => String(f.code) !== code);
+                playerData.friends = playerData.friends.filter(f => String(f.id || '') !== String(search.player.id));
                 playerData.friends.push({
-                    code: String(data.friend.code),
-                    name: String(data.friend.name || 'フレンド'),
+                    id: String(search.player.id),
+                    code: String(search.player.friend_code),
+                    name: String(search.player.name || 'フレンド'),
                     addedAt: new Date().toISOString()
                 });
                 saveData();
@@ -1256,10 +1290,10 @@
                 renderFriendsUI();
                 setFriendOnlineStatus('オンライン', true);
                 playSE('heal');
-                showCustomModal('フレンド追加', `${data.friend.name || 'フレンド'} をオンラインで追加しました。`);
+                showCustomModal('フレンド申請', `${search.player.name || 'フレンド'} にフレンド申請を送りました。相手の承認後にフレンドになります。`);
             } catch (e) {
                 setFriendOnlineStatus('接続失敗', false);
-                const message = e?.data?.message || 'フレンド追加に失敗しました。';
+                const message = e?.data?.message || e?.data?.error || 'フレンド追加に失敗しました。';
                 showCustomModal('フレンド追加', message);
             }
         }
@@ -1275,7 +1309,7 @@
                     return;
                 }
                 try {
-                    await friendApi(`/v1/friends?code=${encodeURIComponent(friend.code)}`, { method: 'DELETE' });
+                    await friendApi(`/friends/${encodeURIComponent(friend.id)}`, { method: 'DELETE' });
                     playerData.friends.splice(index, 1);
                     saveData();
                     renderFriendsUI();
