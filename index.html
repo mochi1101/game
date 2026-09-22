@@ -139,9 +139,9 @@
         .animate-cutin { animation: cutin-slide 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
         .nav-custom-img-icon {
-            height: clamp(38px, 6vh, 52px);
-            width: auto;
-            max-width: 100px;
+            height: clamp(60px, 10.5vh, 90px);
+            width: clamp(60px, 10.5vh, 90px);
+            max-width: none;
             object-fit: contain;
             transition: transform 0.2s, filter 0.2s;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
@@ -434,7 +434,7 @@
 
                     <div class="flex flex-col gap-3 md:gap-4 items-center w-full mt-3">
                         <div id="gacha-banner-box" class="relative w-full rounded-2xl md:rounded-3xl border-2 border-amber-400/80 overflow-hidden bg-slate-900 shadow-[0_0_35px_rgba(245,158,11,0.3)] flex flex-col justify-end group">
-                            <img id="gacha-banner-img" src="ChatGPT Image 2026年9月21日 09_08_35.png" class="absolute inset-0 w-full h-full group-hover:scale-105 transition-transform duration-500" alt="Gacha Banner">
+                            <img id="gacha-banner-img" src="astrea.png" class="absolute inset-0 w-full h-full group-hover:scale-105 transition-transform duration-500" alt="Gacha Banner">
                             
                             <div id="gacha-relic-display" class="hidden absolute inset-0 bg-gradient-to-br from-slate-950 via-amber-950/60 to-slate-900 p-4 md:p-6 flex-col justify-center items-center text-center space-y-3 md:space-y-4">
                                 <div class="flex justify-center items-center space-x-4 md:space-x-8 my-2">
@@ -454,9 +454,9 @@
                             </div>
 
                             <div class="relative z-10 p-4 md:p-6 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent">
-                                <span id="gacha-banner-tag" class="inline-block px-3 py-1 bg-gradient-to-r from-rose-500 to-amber-500 text-slate-950 font-black text-xs rounded-full w-max mb-1.5 md:mb-2 shadow">PICK UP SSR 3.0%</span>
-                                <h3 id="gacha-banner-title" class="text-xl md:text-3xl font-black text-white tracking-wide drop-shadow">【SSR】紅蓮の剣姫フレイア</h3>
-                                <p id="gacha-banner-desc" class="text-xs md:text-sm text-amber-200 mt-1">【火属性】圧倒的超火力！「クリムゾン・ブレイド」発動可能！</p>
+                                <span id="gacha-banner-tag" class="inline-block px-3 py-1 bg-gradient-to-r from-rose-500 to-amber-500 text-slate-950 font-black text-xs rounded-full w-max mb-1.5 md:mb-2 shadow">PICK UP SSR 1.5%</span>
+                                <h3 id="gacha-banner-title" class="text-xl md:text-3xl font-black text-white tracking-wide drop-shadow">【SSR】聖輝の女神アストレア＆黒月の剣聖セレネ</h3>
+                                <p id="gacha-banner-desc" class="text-xs md:text-sm text-amber-200 mt-1">【光＆闇属性】新SSR2体が登場！「アストラル・ブレス」「ムーン・リーパー」発動可能！</p>
                             </div>
                         </div>
 
@@ -907,6 +907,19 @@
                 skillName: 'スターダスト・スラッシュ', skillType: 'all', skillPower: 1.5,
                 statusEffect: 'def_down', dialogue: '「にゃはっ！星の導きで切り開いちゃうよ！」' 
             }
+            ,
+            'astrea': {
+                id: 'astrea', name: '聖輝の女神アストレア', rarity: 'SSR', element: 'light',
+                image: 'astrea.png', baseHp: 1020, baseAtk: 215,
+                skillName: 'アストラル・ブレス', skillType: 'heal', skillPower: 0.65,
+                statusEffect: 'atk_up', dialogue: '「星々の輝きよ、皆を導いて。私が最後まで守ります。」'
+            },
+            'selene': {
+                id: 'selene', name: '黒月の剣聖セレネ', rarity: 'SSR', element: 'dark',
+                image: 'selene.png', baseHp: 980, baseAtk: 235,
+                skillName: 'ムーン・リーパー', skillType: 'all', skillPower: 2.4,
+                statusEffect: 'def_down', dialogue: '「黒月が満ちる夜、すべてを静かに斬り伏せる。」'
+            }
         };
 
         const MASTER_RELICS = [
@@ -1056,12 +1069,12 @@
         }
 
         function saveData() {
-            try { localStorage.setItem('arcana_connect_save_v16', JSON.stringify(playerData)); } catch(e){}
+            try { localStorage.setItem('arcana_connect_save_v17', JSON.stringify(playerData)); } catch(e){}
         }
 
         function loadSavedData() {
             try {
-                const saved = localStorage.getItem('arcana_connect_save_v16') || localStorage.getItem('arcana_connect_save_v15') || localStorage.getItem('arcana_connect_save_v14');
+                const saved = localStorage.getItem('arcana_connect_save_v17') || localStorage.getItem('arcana_connect_save_v16') || localStorage.getItem('arcana_connect_save_v15') || localStorage.getItem('arcana_connect_save_v14');
                 if(saved) playerData = { ...playerData, ...JSON.parse(saved) };
             } catch(e){}
 
@@ -1550,9 +1563,9 @@
             if(type === 'char') {
                 bannerImg.classList.remove('hidden');
                 relicDisplay.classList.add('hidden');
-                bannerTag.innerText = 'PICK UP SSR 3.0%';
-                document.getElementById('gacha-banner-title').innerText = '【SSR】紅蓮の剣姫フレイア';
-                document.getElementById('gacha-banner-desc').innerText = '【火属性】圧倒的超火力！「クリムゾン・ブレイド」発動可能！';
+                bannerTag.innerText = 'PICK UP SSR 1.5%';
+                document.getElementById('gacha-banner-title').innerText = '【SSR】聖輝の女神アストレア＆黒月の剣聖セレネ';
+                document.getElementById('gacha-banner-desc').innerText = '【光＆闇属性】新SSR2体が登場！「アストラル・ブレス」「ムーン・リーパー」発動可能！';
             } else {
                 bannerImg.classList.add('hidden');
                 relicDisplay.classList.remove('hidden');
@@ -1604,7 +1617,10 @@
                 if(currentGachaType === 'char') {
                     const rand = Math.random() * 100;
                     let id = 'iris';
-                    if (rand < 3.0) id = 'freya';
+                    // 新SSR 2体を追加。SSR合計出現率は従来どおり6%（各SSR 1.5%）。
+                    if (rand < 1.5) id = 'astrea';
+                    else if (rand < 3.0) id = 'selene';
+                    else if (rand < 4.5) id = 'freya';
                     else if (rand < 6.0) id = 'aquaria';
                     else if (rand < 15.0) id = 'lumina';
                     else if (rand < 25.0) id = 'veronica';
@@ -2823,12 +2839,28 @@
                     switchTab('home');
                     return;
                 } else {
-                    if (!playerData.clearedQuests.includes(q.id)) {
-                        playerData.clearedQuests.push(q.id);
-                        playerData.gems += q.rewardGems;
+                    // startBattle() で保持している現在のクエストを参照する。
+                    // ここで未定義の q を参照すると勝利処理中に ReferenceError が発生し、
+                    // 勝利後の画面遷移が止まってしまう。
+                    const clearedQuest = currentBattle.quest;
+                    const rewardGems = Number(clearedQuest.rewardGems) || 0;
+
+                    // クリア報酬のジュエルは勝利するたびに加算する。
+                    // clearedQuests は「初回クリア済み」の記録だけに使用する。
+                    if (!playerData.clearedQuests.includes(clearedQuest.id)) {
+                        playerData.clearedQuests.push(clearedQuest.id);
                     }
-                    addPlayerExp(q.rewardExp);
-                    showCustomModal('VICTORY!', `ステージ「${q.name}」をクリアしました！\n報酬: ${q.rewardGems} ジュエル & Exp獲得！`);
+
+                    playerData.gems = Number(playerData.gems) || 0;
+                    playerData.gems += rewardGems;
+
+                    addPlayerExp(clearedQuest.rewardExp);
+
+                    // 勝利報酬を即保存してヘッダー表示にも反映する。
+                    saveData();
+                    updateHeaderUI();
+
+                    showCustomModal('VICTORY!', `ステージ「${clearedQuest.name}」をクリアしました！\n報酬: ${rewardGems} ジュエル & Exp獲得！`);
                     switchTab('quest');
                 }
                 updateHeaderUI();
