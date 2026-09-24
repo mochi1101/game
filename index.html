@@ -232,6 +232,10 @@
             50% { opacity: 1; transform: scale(1.03); }
         }
         .animate-tap-start { animation: tap-pulse 1.8s infinite ease-in-out; }
+        .tower-reward-card { background: linear-gradient(135deg, rgba(15,23,42,.96), rgba(30,41,59,.88)); border:1px solid rgba(245,158,11,.28); box-shadow:0 10px 25px rgba(0,0,0,.22); }
+        .tower-reward-card.earned { border-color:rgba(52,211,153,.45); background:linear-gradient(135deg,rgba(6,78,59,.42),rgba(15,23,42,.92)); }
+        .tower-reward-card.next { border-color:rgba(250,204,21,.8); box-shadow:0 0 24px rgba(250,204,21,.16); }
+        .ssr-ticket-thumb { width:64px; height:42px; object-fit:contain; filter:drop-shadow(0 0 10px rgba(250,204,21,.55)); }
     </style>
 </head>
 <body class="h-full w-full overflow-hidden flex justify-center items-center bg-slate-950 p-0">
@@ -305,6 +309,19 @@
                             <div class="text-left">
                                 <div class="text-xs font-black text-white">デイリーミッション</div>
                                 <div class="text-[10px] text-emerald-300">ジュエルや素材を毎日GET！</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+                    </button>
+
+                    <!-- メールボックス（各種報酬の受取箱） -->
+                    <button onclick="openMailboxModal()" class="relative bg-gradient-to-r from-indigo-950/95 to-purple-950/90 border border-indigo-400/50 hover:border-indigo-300 rounded-2xl p-3 flex items-center justify-between shadow-xl transition active:scale-95">
+                        <div id="mailbox-alert" class="hidden absolute -top-1 -right-1 min-w-6 h-6 px-1 rounded-full bg-red-500 border-2 border-slate-950 text-white text-[11px] font-black items-center justify-center shadow-lg z-20">0</div>
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-envelope-open-text text-indigo-300 text-2xl"></i>
+                            <div class="text-left">
+                                <div class="text-xs font-black text-white">メールボックス</div>
+                                <div class="text-[10px] text-indigo-300">ログイン報酬・タワー報酬・お詫び石など</div>
                             </div>
                         </div>
                         <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
@@ -462,6 +479,17 @@
                             </div>
                         </div>
 
+                        <div id="gacha-ticket-panel" class="w-full bg-gradient-to-r from-amber-950/90 via-slate-900 to-purple-950/90 border border-amber-400/50 rounded-2xl p-3 md:p-4 shadow-xl">
+                            <div class="flex items-center gap-3">
+                                <img src="ssr_ticket.png" alt="SSR確定ガチャチケット" class="ssr-ticket-thumb shrink-0">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center gap-2"><span class="text-xs md:text-sm font-black text-amber-300">SSR確定ガチャチケット</span><span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black">所持 <span id="ssr-ticket-count">0</span></span></div>
+                                    <div class="text-[9px] md:text-[10px] text-slate-400 mt-1">タワー20F報酬。使用するとSSRキャラクターを1体確定で召喚できます。</div>
+                                </div>
+                                <button onclick="performSSRTicketGacha()" class="shrink-0 gold-gradient text-slate-950 font-black text-[10px] md:text-xs px-3 py-2 rounded-xl shadow-lg active:scale-95 transition">チケットで召喚</button>
+                            </div>
+                        </div>
+
                         <div id="gacha-action-panel" class="flex flex-col justify-center gap-3 md:gap-4 pb-12">
                             <div class="bg-slate-900/90 border border-purple-500/40 rounded-2xl p-3 md:p-4 text-xs md:text-sm text-slate-300 space-y-1.5 shadow-xl">
                                 <div class="text-amber-400 font-bold border-b border-slate-800 pb-1.5 flex justify-between">
@@ -538,9 +566,20 @@
                         <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 md:p-3 text-xs text-slate-300 max-w-md mx-auto mb-4 md:mb-6">
                             <div class="text-amber-300 font-bold mb-1 text-[11px] md:text-xs">第 <span id="tower-target-floor">1</span> 階層 守護者</div>
                             <div id="tower-enemy-info" class="text-slate-400 text-[10px] md:text-xs">属性: 火 | 推奨戦闘力: 800</div>
-                            <div class="text-emerald-400 mt-1.5 md:mt-2 font-bold text-[10px] md:text-xs">初回クリア報酬: <i class="fa-solid fa-gem text-[10px]"></i> 300 ジュエル</div>
+                            <div id="tower-current-reward" class="text-emerald-400 mt-1.5 md:mt-2 font-bold text-[10px] md:text-xs">初回クリア報酬: <i class="fa-solid fa-gem text-[10px]"></i> 300 ジュエル</div>
                         </div>
 
+                        <div class="tower-reward-card rounded-2xl p-3 md:p-4 text-left mb-3 md:mb-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <div class="text-[10px] text-amber-400 font-black tracking-widest">TOWER MILESTONE REWARDS</div>
+                                    <div class="text-sm md:text-base font-black text-white">10F / 20F / 30F / 40F / 50F 限定報酬</div>
+                                </div>
+                                <div class="text-[10px] text-slate-400">SSRチケット <span id="tower-ticket-count" class="text-amber-300 font-black">0</span>枚</div>
+                            </div>
+                            <div id="tower-reward-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2"></div>
+                            <div id="tower-title-display" class="hidden mt-2 text-center text-[10px] text-purple-300 font-bold"></div>
+                        </div>
                         <button onclick="startTowerChallenge()" class="gold-gradient gold-gradient-hover text-slate-950 font-black px-8 md:px-12 py-2.5 md:py-3 rounded-xl text-xs md:text-sm shadow-xl transform active:scale-95 transition">
                             タワーに挑戦する
                         </button>
@@ -716,6 +755,23 @@
                 <button onclick="closeGachaModal()" class="gold-gradient gold-gradient-hover text-slate-950 font-black px-8 md:px-12 py-2.5 md:py-3.5 rounded-full text-sm md:text-base shadow-2xl transform active:scale-95 transition">
                     結果を確認
                 </button>
+            </div>
+        </div>
+
+        <!-- メールボックス -->
+        <div id="mailbox-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+            <div class="bg-slate-900 border-2 border-indigo-400/60 rounded-3xl p-5 max-w-lg w-full max-h-[88vh] shadow-2xl flex flex-col">
+                <div class="flex items-center justify-between mb-3 shrink-0">
+                    <div>
+                        <h3 class="text-base md:text-lg font-black text-indigo-300">メールボックス</h3>
+                        <p class="text-[9px] text-slate-500 mt-0.5">受け取った報酬はここから受け取れます。</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="claimAllMailboxMails()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] px-3 py-1.5 rounded-lg shadow-lg">一括受取</button>
+                        <button onclick="closeMailboxModal()" class="text-slate-400 hover:text-white w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                </div>
+                <div id="mailbox-list" class="space-y-2 overflow-y-auto pr-1"></div>
             </div>
         </div>
 
@@ -924,12 +980,20 @@
                 skillName: 'ムーン・リーパー', skillType: 'all', skillPower: 2.4,
                 statusEffect: 'def_down', dialogue: '「黒月が満ちる夜、すべてを静かに斬り伏せる。」'
             }
+            ,
+            'luciferia': {
+                id: 'luciferia', name: '魔王・深淵のルシフェリア', rarity: 'SSR', element: 'dark',
+                image: 'ChatGPT Image 2026年9月21日 09_19_42.png', baseHp: 1120, baseAtk: 255,
+                skillName: 'アビス・エンド', skillType: 'all', skillPower: 2.7,
+                statusEffect: 'def_down', dialogue: '「この深淵を越えた者だけが、私を従える資格を持つ。」'
+            }
         };
 
         const MASTER_RELICS = [
             { masterId: 'rel_sword', name: '聖剣の欠片', stat: 'atk', val: 75, rarity: 'SSR', img: 'ChatGPT Image 2026年9月21日 09_26_46.png' },
             { masterId: 'rel_aegis', name: 'イージスの盾', stat: 'hp', val: 400, rarity: 'SSR', img: 'ChatGPT Image 2026年9月21日 09_30_46.png' },
             { masterId: 'rel_axe', name: '破滅の斧', stat: 'atk', val: 90, rarity: 'SSR', img: 'ChatGPT Image 2026年9月21日 09_33_51.png' },
+            { masterId: 'rel_tower_crown', name: '天穹の王冠', stat: 'hp', val: 650, rarity: 'SSR', img: 'tenkyu_crown.png', icon: 'fa-crown', towerExclusive: true },
             { masterId: 'rel_shield', name: 'ガーディアンシールド', stat: 'hp', val: 250, rarity: 'SR', icon: 'fa-shield' },
             { masterId: 'rel_dragon_armor', name: '竜鱗の鎧', stat: 'hp', val: 300, rarity: 'SR', icon: 'fa-vest' },
             { masterId: 'rel_sage_ring', name: '賢者の指輪', stat: 'atk', val: 45, rarity: 'SR', icon: 'fa-ring' },
@@ -984,6 +1048,8 @@
         let playerData = {
             name: '',
             level: 1, exp: 0, gems: 3000, ap: 50, maxAp: 50, crystals: 50,
+            ssrTickets: 0,
+            towerTitle: '',
             towerFloor: 1,
             clearedQuests: [],
             clearedTowerFloors: [],
@@ -1004,6 +1070,9 @@
                 claimedQuest: false,
                 claimedGacha: false
             },
+            // メールボックス：各種報酬をここへ届け、受取時に実際の所持品へ反映する
+            mailbox: [],
+            mailboxMigrationVersion: 0,
             // レイド関連データ
             raidDamage: 0,
             raidTickets: 3,
@@ -1077,6 +1146,7 @@
             renderPartyUI();
             renderTowerUI();
             renderFriendsUI();
+            updateMailboxAlert();
             switchTab('home');
         }
 
@@ -1093,7 +1163,12 @@
             if (!Array.isArray(playerData.friends)) playerData.friends = [];
             if (!Array.isArray(playerData.clearedQuests)) playerData.clearedQuests = [];
             if (!Array.isArray(playerData.clearedTowerFloors)) playerData.clearedTowerFloors = [];
+            if (!Number.isFinite(Number(playerData.ssrTickets)) || Number(playerData.ssrTickets) < 0) playerData.ssrTickets = 0;
+            if (typeof playerData.towerTitle !== 'string') playerData.towerTitle = '';
             if (!Number.isFinite(Number(playerData.towerFloor)) || Number(playerData.towerFloor) < 1) playerData.towerFloor = 1;
+            if (!Array.isArray(playerData.mailbox)) playerData.mailbox = [];
+            if (!Number.isFinite(Number(playerData.mailboxMigrationVersion))) playerData.mailboxMigrationVersion = 0;
+            migrateRewardMailbox();
             if (!playerData.friendCode || !/^\d{8}$/.test(String(playerData.friendCode))) {
                 playerData.friendCode = String(Math.floor(10000000 + Math.random() * 90000000));
                 saveData();
@@ -1117,6 +1192,7 @@
 
             if(tabId === 'home') {
                 updateHomeDisplay();
+                updateMailboxAlert();
                 syncSharedRaidHpAndRender();
             }
             if(tabId === 'quest') renderQuests();
@@ -1495,6 +1571,8 @@
             document.getElementById('player-max-ap').innerText = playerData.maxAp;
             document.getElementById('player-gems').innerText = playerData.gems.toLocaleString();
             document.getElementById('player-crystals').innerText = playerData.crystals;
+            const ticketCountEl = document.getElementById('ssr-ticket-count');
+            if (ticketCountEl) ticketCountEl.innerText = Number(playerData.ssrTickets || 0);
             const enhanceCrystalEl = document.getElementById('enhance-crystal-count');
             if (enhanceCrystalEl) enhanceCrystalEl.innerText = playerData.crystals;
             saveData();
@@ -1706,6 +1784,28 @@
 
                 updateHeaderUI();
             }, 1600);
+        }
+
+        function performSSRTicketGacha() {
+            if ((Number(playerData.ssrTickets) || 0) <= 0) { showCustomModal('チケット不足', 'SSR確定ガチャチケットを所持していません。タワー20Fをクリアすると獲得できます。'); return; }
+            playerData.ssrTickets -= 1;
+            const ssrPool = ['astrea', 'selene', 'freya', 'aquaria'];
+            const id = ssrPool[Math.floor(Math.random() * ssrPool.length)];
+            const unit = MASTER_UNITS[id];
+            const isNew = !playerData.inventory[id];
+            if (isNew) playerData.inventory[id] = { level: 1, awaken: 0, skillLevel: 1, equippedRelicInstanceId: null };
+            else playerData.crystals += 50;
+            saveData(); updateHeaderUI();
+            const modal=document.getElementById('gacha-modal'), anim=document.getElementById('gacha-anim-container'), results=document.getElementById('gacha-results'), grid=document.getElementById('gacha-results-grid');
+            modal.classList.remove('hidden'); modal.classList.add('flex'); anim.classList.remove('hidden'); results.classList.add('hidden');
+            document.getElementById('gacha-circle-fx').className="absolute inset-0 rounded-full border-4 border-amber-200 border-t-yellow-300 animate-gacha-magic shadow-[0_0_70px_#fde047]";
+            document.getElementById('gacha-text-fx').innerHTML="<span class='text-gold font-extrabold'>SSR確定召喚！！</span>";
+            setTimeout(()=>{
+                anim.classList.add('hidden'); results.classList.remove('hidden'); results.classList.add('flex'); grid.className='flex justify-center items-center w-full mb-4 md:mb-6'; grid.innerHTML='';
+                const card=document.createElement('div'); card.className='bg-slate-900 border-2 border-amber-300 rounded-3xl p-5 md:p-7 flex flex-col items-center justify-center text-center shadow-[0_0_40px_rgba(250,204,21,0.3)]';
+                card.innerHTML=`<span class="text-sm text-amber-300 font-black tracking-widest">SSR 確定</span><img src="${unit.image}" class="h-32 md:h-48 object-contain my-3"><span class="text-base md:text-xl text-white font-black">${unit.name}</span><span class="text-[10px] text-purple-300 font-bold mt-1">${isNew?'NEW! SSR確定チケットで加入':'+50 クリスタル'}</span>`;
+                grid.appendChild(card);
+            },1600);
         }
 
         function closeGachaModal() {
@@ -2105,63 +2205,220 @@
             startBattle(quest, activeParty);
         }
 
-        function renderTowerUI() {
-            document.getElementById('tower-floor-display').innerText = playerData.towerFloor;
-            document.getElementById('tower-target-floor').innerText = playerData.towerFloor;
-
-            const floor = playerData.towerFloor;
-            const isChronosFloor = floor >= 48;
-            const isCrimsonFloor = !isChronosFloor && floor >= 46 && floor <= 47;
-            const isBahamutFloor = !isChronosFloor && !isCrimsonFloor && (floor >= 45 || (floor % 10 === 5 && floor >= 25));
-            const isAstralFloor = !isChronosFloor && !isCrimsonFloor && !isBahamutFloor && floor >= 41 && floor <= 44;
-            const isLuciferiaFloor = !isChronosFloor && !isCrimsonFloor && !isBahamutFloor && !isAstralFloor && (floor % 10 === 0 || floor >= 40);
-
-            let enemyName = '階層守護竜';
-            let attr = '火/水/風';
-            if (isChronosFloor) { enemyName = '虚無竜クロノス'; attr = '闇'; }
-            else if (isCrimsonFloor) { enemyName = '紅蓮終焉の魔竜'; attr = '火'; }
-            else if (isBahamutFloor) { enemyName = '滅世竜バハムート'; attr = '火'; }
-            else if (isAstralFloor) { enemyName = '星蝕の蒼晶竜'; attr = '水'; }
-            else if (isLuciferiaFloor) { enemyName = '魔王ルシフェリア'; attr = '闇'; }
-
-            const enemyInfoText = `ボス: ${enemyName} | 属性: ${attr} | 推奨戦闘力: ${800 + (floor * 150)}`;
-            document.getElementById('tower-enemy-info').innerText = enemyInfoText;
+        const TOWER_MILESTONE_REWARDS = {
+            10:{kind:'gems',label:'ジュエル',detail:'1,000ジュエル',icon:'fa-gem'},
+            20:{kind:'ticket',label:'SSR確定チケット',detail:'SSR確定ガチャチケット ×1',image:'ssr_ticket.png'},
+            30:{kind:'relic',masterId:'rel_tower_crown',label:'限定装備',detail:'天穹の王冠',icon:'fa-crown'},
+            40:{kind:'unit',label:'限定キャラ',detail:'魔王・深淵のルシフェリア',image:MASTER_UNITS.luciferia.image},
+            50:{kind:'title',label:'限定称号',detail:'「バベルの踏破者」',icon:'fa-trophy'}
+        };
+        function getTowerMilestoneReward(floor){return TOWER_MILESTONE_REWARDS[Number(floor)]||null;}
+        function renderTowerRewardCard(floor,reward){
+            const cleared=playerData.clearedTowerFloors.includes(Number(floor)), next=Number(floor)===Number(playerData.towerFloor);
+            const relicMaster=reward.kind==='relic'?MASTER_RELICS.find(x=>x.masterId===(reward.masterId||'rel_tower_crown')):null;
+            const rewardImage=reward.image||relicMaster?.img;
+            const rewardIcon=reward.icon||relicMaster?.icon||'fa-shield-halved';
+            const icon=rewardImage?`<img src="${rewardImage}" alt="${reward.detail||reward.label}" class="w-14 h-14 md:w-16 md:h-16 object-contain mx-auto drop-shadow-[0_0_12px_rgba(245,158,11,0.65)]">`:`<div class="w-12 h-12 mx-auto rounded-xl bg-slate-950 border border-slate-700 flex items-center justify-center"><i class="fa-solid ${rewardIcon} text-xl text-amber-300"></i></div>`;
+            return `<div class="tower-reward-card ${cleared?'earned':''} ${next?'next':''} rounded-xl p-2 text-center relative overflow-hidden">${next?'<div class="absolute top-0 right-0 text-[8px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.5 rounded-bl-lg">NEXT</div>':''}<div class="text-[10px] font-black ${cleared?'text-emerald-300':'text-amber-300'}">${floor}F</div><div class="mt-1 h-12 flex items-center justify-center">${icon}</div><div class="text-[9px] md:text-[10px] text-white font-black mt-1 leading-tight">${reward.label}</div><div class="text-[8px] text-slate-400 mt-0.5 leading-tight">${reward.detail}</div><div class="text-[8px] font-black mt-1 ${cleared?'text-emerald-400':'text-slate-500'}">${cleared?'獲得済み':'未獲得'}</div></div>`;
+        }
+        function renderTowerUI(){
+            document.getElementById('tower-floor-display').innerText=playerData.towerFloor; document.getElementById('tower-target-floor').innerText=playerData.towerFloor;
+            const list=document.getElementById('tower-reward-list'); if(list) list.innerHTML=Object.entries(TOWER_MILESTONE_REWARDS).map(([f,r])=>renderTowerRewardCard(f,r)).join('');
+            const tc=document.getElementById('tower-ticket-count'); if(tc) tc.innerText=Number(playerData.ssrTickets||0);
+            const td=document.getElementById('tower-title-display'); if(td){if(playerData.towerTitle){td.innerText=`現在の限定称号：${playerData.towerTitle}`;td.classList.remove('hidden')}else td.classList.add('hidden')}
+            const floor=playerData.towerFloor, chronos=floor>=48, crimson=!chronos&&floor>=46&&floor<=47, bahamut=!chronos&&!crimson&&(floor>=45||(floor%10===5&&floor>=25)), astral=!chronos&&!crimson&&!bahamut&&floor>=41&&floor<=44, lucifer=!chronos&&!crimson&&!bahamut&&!astral&&(floor%10===0||floor>=40);
+            let enemyName='階層守護竜',attr='火/水/風'; if(chronos){enemyName='虚無竜クロノス';attr='闇'} else if(crimson){enemyName='紅蓮終焉の魔竜';attr='火'} else if(bahamut){enemyName='滅世竜バハムート';attr='火'} else if(astral){enemyName='星蝕の蒼晶竜';attr='水'} else if(lucifer){enemyName='魔王ルシフェリア';attr='闇'}
+            document.getElementById('tower-enemy-info').innerText=`ボス: ${enemyName} | 属性: ${attr} | 推奨戦闘力: ${800+floor*150}`;
+            const reward=getTowerMilestoneReward(floor), re=document.getElementById('tower-current-reward'); if(re) re.innerHTML=reward?`初回クリア報酬: <span class="text-amber-300">${reward.detail}</span>`:`初回クリア報酬: <i class="fa-solid fa-gem text-[10px]"></i> ${300+floor*10} ジュエル`;
+        }
+        // ===== 報酬メールボックス =====
+        // 今後のログインボーナス、詫び石、イベント報酬なども同じ仕組みで配布できます。
+        function makeRewardMailId(prefix='reward') {
+            return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
         }
 
-        function startTowerChallenge() {
-            const activeParty = playerData.party.filter(id => id !== null);
-            if (activeParty.length === 0) { showCustomModal('エラー', '出撃パーティを編成してください。'); return; }
-
-            const floor = playerData.towerFloor;
-            const isChronosFloor = floor >= 48;
-            const isCrimsonFloor = !isChronosFloor && floor >= 46 && floor <= 47;
-            const isBahamutFloor = !isChronosFloor && !isCrimsonFloor && (floor >= 45 || (floor % 10 === 5 && floor >= 25));
-            const isAstralFloor = !isChronosFloor && !isCrimsonFloor && !isBahamutFloor && floor >= 41 && floor <= 44;
-            const isLuciferiaFloor = !isChronosFloor && !isCrimsonFloor && !isBahamutFloor && !isAstralFloor && (floor % 10 === 0 || floor >= 40);
-
-            let enemyType = 'dragon';
-            let enemyName = `階層守護竜`;
-            if (isChronosFloor) { enemyType = 'chronos'; enemyName = '虚無竜クロノス'; }
-            else if (isCrimsonFloor) { enemyType = 'crimson'; enemyName = '紅蓮終焉の魔竜'; }
-            else if (isBahamutFloor) { enemyType = 'bahamut'; enemyName = '滅世竜バハムート'; }
-            else if (isAstralFloor) { enemyType = 'astral'; enemyName = '星蝕の蒼晶竜'; }
-            else if (isLuciferiaFloor) { enemyType = 'luciferia'; enemyName = '魔王・深淵のルシフェリア'; }
-
-            const towerQuest = {
-                id: 999, name: `タワー第 ${floor} 階層`, ap: 0, rewardExp: 100, rewardGems: 300,
-                waves: [{
-                    enemies: [{
-                        type: enemyType,
-                        name: enemyName,
-                        hp: 1200 + (floor * 320),
-                        atk: 60 + (floor * 16),
-                        isBoss: true
-                    }]
-                }]
+        function queueRewardMail(title, body, rewards, options = {}) {
+            if (!Array.isArray(playerData.mailbox)) playerData.mailbox = [];
+            const mail = {
+                id: options.id || makeRewardMailId(options.prefix || 'reward'),
+                title: title || '報酬のお知らせ',
+                body: body || '報酬が届いています。',
+                rewards: Array.isArray(rewards) ? rewards : [],
+                createdAt: options.createdAt || new Date().toISOString(),
+                claimed: false,
+                category: options.category || 'reward'
             };
-            
-            isCurrentStageClearedBefore = playerData.clearedTowerFloors.includes(floor);
-            startBattle(towerQuest, activeParty);
+            if (playerData.mailbox.some(m => m && m.id === mail.id)) return false;
+            playerData.mailbox.unshift(mail);
+            saveData();
+            updateMailboxAlert();
+            return true;
+        }
+
+        function rewardLabel(reward) {
+            const amount = Number(reward.amount || 1);
+            if (reward.kind === 'gems') return `${amount.toLocaleString()} ジュエル`;
+            if (reward.kind === 'crystals') return `${amount.toLocaleString()} クリスタル`;
+            if (reward.kind === 'ssrTicket') return `SSR確定ガチャチケット ×${amount}`;
+            if (reward.kind === 'relic') return `${reward.name || '限定装備'} ×${amount}`;
+            if (reward.kind === 'unit') return `${reward.name || '限定キャラ'} ×${amount}`;
+            if (reward.kind === 'title') return `称号「${reward.name || ''}」`;
+            return reward.name || '報酬';
+        }
+
+        function rewardMailSummary(mail) {
+            return (mail.rewards || []).map(rewardLabel).join(' / ');
+        }
+
+        function applyMailboxReward(reward) {
+            const amount = Math.max(1, Number(reward.amount || 1));
+            if (reward.kind === 'gems') {
+                playerData.gems = (Number(playerData.gems) || 0) + amount;
+                return;
+            }
+            if (reward.kind === 'crystals') {
+                playerData.crystals = (Number(playerData.crystals) || 0) + amount;
+                return;
+            }
+            if (reward.kind === 'ssrTicket') {
+                playerData.ssrTickets = (Number(playerData.ssrTickets) || 0) + amount;
+                return;
+            }
+            if (reward.kind === 'relic') {
+                const relic = MASTER_RELICS.find(x => x.masterId === reward.masterId);
+                if (relic) for (let i = 0; i < amount; i++) addRelicToInventory(relic);
+                return;
+            }
+            if (reward.kind === 'unit') {
+                const unitId = reward.unitId;
+                if (!unitId || !MASTER_UNITS[unitId]) return;
+                if (!playerData.inventory[unitId]) {
+                    playerData.inventory[unitId] = { level: 1, awaken: 0, skillLevel: 1, equippedRelicInstanceId: null };
+                } else {
+                    playerData.crystals = (Number(playerData.crystals) || 0) + 100 * amount;
+                }
+                return;
+            }
+            if (reward.kind === 'title') {
+                playerData.towerTitle = reward.name || playerData.towerTitle;
+            }
+        }
+
+        function claimMailboxMail(mailId, silent = false) {
+            const mail = (playerData.mailbox || []).find(m => m && m.id === mailId);
+            if (!mail || mail.claimed) return false;
+            (mail.rewards || []).forEach(applyMailboxReward);
+            mail.claimed = true;
+            mail.claimedAt = new Date().toISOString();
+            saveData();
+            updateHeaderUI();
+            renderTowerUI();
+            updateMailboxAlert();
+            if (!silent) {
+                renderMailboxUI();
+                showCustomModal('報酬獲得', `${mail.title}の報酬を受け取りました。\n${rewardMailSummary(mail)}`);
+            }
+            return true;
+        }
+
+        function claimAllMailboxMails() {
+            const pending = (playerData.mailbox || []).filter(m => m && !m.claimed);
+            if (!pending.length) {
+                showCustomModal('メールボックス', '受け取れる報酬はありません。');
+                return;
+            }
+            pending.forEach(m => claimMailboxMail(m.id, true));
+            renderMailboxUI();
+            updateMailboxAlert();
+            showCustomModal('報酬一括受取', `${pending.length}件のメール報酬を受け取りました。`);
+        }
+
+        function renderMailboxUI() {
+            const list = document.getElementById('mailbox-list');
+            if (!list) return;
+            const mails = Array.isArray(playerData.mailbox) ? playerData.mailbox : [];
+            if (!mails.length) {
+                list.innerHTML = `<div class="text-center text-slate-500 text-xs py-12"><i class="fa-solid fa-envelope-open text-3xl mb-3 block text-slate-700"></i>メールはありません</div>`;
+                return;
+            }
+            list.innerHTML = mails.map(mail => {
+                const claimed = !!mail.claimed;
+                return `<div class="bg-slate-950 border ${claimed ? 'border-slate-800 opacity-60' : 'border-indigo-500/40'} rounded-2xl p-3 shadow-lg">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <div class="text-[9px] ${claimed ? 'text-slate-500' : 'text-indigo-300'} font-black tracking-widest">${claimed ? '受取済み' : 'NEW REWARD'}</div>
+                            <div class="text-xs md:text-sm font-black text-white mt-0.5 truncate">${mail.title}</div>
+                            <div class="text-[10px] text-slate-400 mt-1 leading-relaxed">${mail.body}</div>
+                            <div class="text-[10px] text-amber-300 font-bold mt-2">${rewardMailSummary(mail)}</div>
+                        </div>
+                        <button ${claimed ? 'disabled' : ''} onclick="claimMailboxMail('${mail.id}')" class="shrink-0 ${claimed ? 'bg-slate-800 text-slate-600' : 'bg-indigo-600 hover:bg-indigo-500 text-white'} font-black text-[10px] px-3 py-2 rounded-xl shadow-lg">${claimed ? '受取済' : '受け取る'}</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function openMailboxModal() {
+            renderMailboxUI();
+            const modal = document.getElementById('mailbox-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeMailboxModal() {
+            const modal = document.getElementById('mailbox-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function updateMailboxAlert() {
+            const alert = document.getElementById('mailbox-alert');
+            if (!alert) return;
+            const count = (playerData.mailbox || []).filter(m => m && !m.claimed).length;
+            alert.innerText = count > 99 ? '99+' : String(count);
+            alert.classList.toggle('hidden', count === 0);
+            alert.classList.toggle('flex', count > 0);
+        }
+
+        // 既存セーブのタワー到達済みマイルストーンを救済メールへ移行。
+        // 一度だけ実行するため、以後のログインでは同じメールを重複作成しません。
+        function migrateRewardMailbox() {
+            if (!Array.isArray(playerData.clearedTowerFloors)) playerData.clearedTowerFloors = [];
+            if (!Array.isArray(playerData.mailbox)) playerData.mailbox = [];
+            if (Number(playerData.mailboxMigrationVersion) >= 1) return;
+
+            Object.entries(TOWER_MILESTONE_REWARDS).forEach(([floor, reward]) => {
+                const f = Number(floor);
+                if (!playerData.clearedTowerFloors.includes(f)) return;
+                const id = `tower_milestone_${f}_v1`;
+                let rewards = [];
+                if (reward.kind === 'gems') rewards = [{kind:'gems', amount:1000}];
+                if (reward.kind === 'ticket') rewards = [{kind:'ssrTicket', amount:1}];
+                if (reward.kind === 'relic') rewards = [{kind:'relic', masterId:'rel_tower_crown', name:'天穹の王冠', amount:1}];
+                if (reward.kind === 'unit') rewards = [{kind:'unit', unitId:'luciferia', name:'魔王・深淵のルシフェリア', amount:1}];
+                if (reward.kind === 'title') rewards = [{kind:'title', name:'バベルの踏破者', amount:1}];
+                queueRewardMail(`タワー${f}Fクリア報酬`, `過去のタワークリア報酬をメールボックスへお届けします。${f}F到達済みのため受け取れます。`, rewards, {id, category:'tower'});
+            });
+            playerData.mailboxMigrationVersion = 1;
+            saveData();
+        }
+
+        function addTowerReward(floor){
+            const r=getTowerMilestoneReward(floor); if(!r)return'';
+            let rewards=[];
+            if(r.kind==='gems') rewards=[{kind:'gems',amount:1000}];
+            if(r.kind==='ticket') rewards=[{kind:'ssrTicket',amount:1}];
+            if(r.kind==='relic') rewards=[{kind:'relic',masterId:'rel_tower_crown',name:'天穹の王冠',amount:1}];
+            if(r.kind==='unit') rewards=[{kind:'unit',unitId:'luciferia',name:'魔王・深淵のルシフェリア',amount:1}];
+            if(r.kind==='title') rewards=[{kind:'title',name:'バベルの踏破者',amount:1}];
+            queueRewardMail(`タワー${floor}Fクリア報酬`, `タワーの節目報酬が届きました。メールボックスから受け取ってください。`, rewards, {id:`tower_milestone_${floor}_${Date.now()}`,category:'tower'});
+            return `${r.detail}（メールボックスに送付）`;
+        }
+        function startTowerChallenge(){
+            const activeParty=playerData.party.filter(id=>id!==null); if(activeParty.length===0){showCustomModal('エラー','出撃パーティを編成してください。');return;}
+            const floor=playerData.towerFloor, chronos=floor>=48, crimson=!chronos&&floor>=46&&floor<=47, bahamut=!chronos&&!crimson&&(floor>=45||(floor%10===5&&floor>=25)), astral=!chronos&&!crimson&&!bahamut&&floor>=41&&floor<=44, lucifer=!chronos&&!crimson&&!bahamut&&!astral&&(floor%10===0||floor>=40);
+            let enemyType='dragon',enemyName='階層守護竜'; if(chronos){enemyType='chronos';enemyName='虚無竜クロノス'} else if(crimson){enemyType='crimson';enemyName='紅蓮終焉の魔竜'} else if(bahamut){enemyType='bahamut';enemyName='滅世竜バハムート'} else if(astral){enemyType='astral';enemyName='星蝕の蒼晶竜'} else if(lucifer){enemyType='luciferia';enemyName='魔王・深淵のルシフェリア'}
+            const towerQuest={id:999,name:`タワー第 ${floor} 階層`,ap:0,rewardExp:100,rewardGems:floor%10===0?0:300+floor*10,waves:[{enemies:[{type:enemyType,name:enemyName,hp:1200+floor*320,atk:60+floor*16,isBoss:true}]}]};
+            isCurrentStageClearedBefore=playerData.clearedTowerFloors.includes(floor); startBattle(towerQuest,activeParty);
         }
 
         /* レイド・デイリーミッションUI拡張 */
@@ -2220,28 +2477,40 @@
         }
 
         function claimLoginReward() {
+            if (playerData.dailyProgress.claimedLogin) return;
             playerData.dailyProgress.claimedLogin = true;
-            playerData.gems += 100;
+            queueRewardMail('ログインボーナス', '本日のログインボーナスが届きました。', [{kind:'gems',amount:100}], {prefix:'login',category:'daily'});
             saveData();
-            updateHeaderUI();
             renderMissionsUI();
-            showCustomModal('報酬獲得', 'ログインボーナス 100ジュエルを獲得しました！');
+            updateMailboxAlert();
+            showCustomModal('メールボックスへ送付', 'ログインボーナス 100ジュエルをメールボックスへ送りました。');
         }
         function claimQuestReward() {
+            if (playerData.dailyProgress.claimedQuest) return;
             playerData.dailyProgress.claimedQuest = true;
-            playerData.gems += 150;
+            queueRewardMail('デイリーミッション報酬', 'クエスト3回クリアの報酬が届きました。', [{kind:'gems',amount:150}], {prefix:'daily_quest',category:'daily'});
             saveData();
-            updateHeaderUI();
             renderMissionsUI();
-            showCustomModal('報酬獲得', 'デイリーミッション報酬 150ジュエルを獲得しました！');
+            updateMailboxAlert();
+            showCustomModal('メールボックスへ送付', 'デイリーミッション報酬 150ジュエルをメールボックスへ送りました。');
         }
         function claimGachaReward() {
+            if (playerData.dailyProgress.claimedGacha) return;
             playerData.dailyProgress.claimedGacha = true;
-            playerData.crystals += 20;
+            queueRewardMail('デイリーミッション報酬', 'ガチャ1回の達成報酬が届きました。', [{kind:'crystals',amount:20}], {prefix:'daily_gacha',category:'daily'});
             saveData();
-            updateHeaderUI();
             renderMissionsUI();
-            showCustomModal('報酬獲得', 'デイリーミッション報酬 20クリスタルを獲得しました！');
+            updateMailboxAlert();
+            showCustomModal('メールボックスへ送付', 'デイリーミッション報酬 20クリスタルをメールボックスへ送りました。');
+        }
+
+        // 今後のお詫び石・イベント補填などはこの関数で配布できます。
+        // 例：sendCompensationMail('メンテナンスのお詫び', 'ご迷惑をおかけしました。', 300)
+        function sendCompensationMail(title, body, gems = 0, extraRewards = []) {
+            const rewards = [];
+            if (Number(gems) > 0) rewards.push({kind:'gems', amount:Number(gems)});
+            if (Array.isArray(extraRewards)) rewards.push(...extraRewards);
+            return queueRewardMail(title || 'お詫び報酬', body || 'ご迷惑をおかけしたお詫びとして報酬をお送りします。', rewards, {prefix:'compensation',category:'compensation'});
         }
 
 
@@ -2891,11 +3160,14 @@
                         playerData.gems = Number(playerData.gems) || 0;
                         playerData.gems += rewardGems;
                         addPlayerExp(clearedQuest.rewardExp);
+                        let milestoneText = '';
+                        if (!isCurrentStageClearedBefore) milestoneText = addTowerReward(clearedFloor);
                         saveData();
                         updateHeaderUI();
                         renderTowerUI();
-
-                        showCustomModal('VICTORY!', `タワー第${clearedFloor}階層をクリアしました！\n次の階層: 第${playerData.towerFloor}階\n報酬: ${rewardGems} ジュエル & Exp獲得！`);
+                        const normalRewardText = rewardGems > 0 ? `${rewardGems} ジュエル & ` : '';
+                        const milestoneLine = milestoneText ? `\n\n★ タワー限定報酬 ★\n${milestoneText}` : '';
+                        showCustomModal('VICTORY!', `タワー第${clearedFloor}階層をクリアしました！\n次の階層: 第${playerData.towerFloor}階\n報酬: ${normalRewardText}Exp獲得！${milestoneLine}`);
                         switchTab('tower');
                         return;
                     }
