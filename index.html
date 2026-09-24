@@ -887,7 +887,13 @@
                             <button onclick="firebaseCloudSave()" class="bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 font-black text-xs py-2.5 rounded-xl hover:bg-cyan-500/30 transition">今すぐ保存</button>
                         </div>
                         <button onclick="firebaseCloudLoad()" class="w-full mt-2 bg-slate-800 border border-slate-700 text-slate-200 font-black text-xs py-2.5 rounded-xl hover:border-cyan-400 transition">クラウドから読み込む</button>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <button onclick="exportGameMigrationBackup()" class="bg-amber-500/10 border border-amber-400/30 text-amber-200 font-black text-[11px] py-2.5 rounded-xl hover:bg-amber-500/20 transition"><i class="fa-solid fa-download mr-1"></i>データをバックアップ</button>
+                            <button onclick="document.getElementById('game-migration-file').click()" class="bg-slate-800 border border-slate-700 text-slate-200 font-black text-[11px] py-2.5 rounded-xl hover:border-amber-400 transition"><i class="fa-solid fa-upload mr-1"></i>バックアップを復元</button>
+                        </div>
+                        <input id="game-migration-file" type="file" accept="application/json,.json" class="hidden" onchange="importGameMigrationBackup(event)">
                         <div id="firebase-cloud-status" class="text-[10px] text-slate-500 mt-2 text-center">ローカル保存はこれまで通り利用できます</div>
+                        <div class="text-[9px] text-slate-500 mt-2 leading-relaxed text-center">HTMLを直接開いている場合は、まず「データをバックアップ」で現在のやり込みデータを保存してください。Web版で復元してからGoogle連携できます。</div>
                     </div>
                     <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
                         <div class="text-[10px] text-purple-300 font-black tracking-widest mb-2">TITLE</div>
@@ -3666,6 +3672,126 @@
         }
     </script>
 
+    <!-- セーブデータ移行：file:// で遊んでいる既存データをWeb版へ安全に持ち込むための機能 -->
+    <script>
+        const GAME_SAVE_KEY = 'arcana_connect_save_v17';
+        const GAME_MIGRATION_VERSION = 1;
+
+        function getCurrentLocalGameSave() {
+            try {
+                const raw = localStorage.getItem(GAME_SAVE_KEY);
+                if (!raw) return null;
+                return JSON.parse(raw);
+            } catch (e) {
+                console.error('Local save read failed:', e);
+                return null;
+            }
+        }
+
+        function exportGameMigrationBackup() {
+            const save = getCurrentLocalGameSave();
+            if (!save) {
+                alert('現在の端末にゲームセーブが見つかりません。まずゲームを保存してから再度お試しください。');
+                return;
+            }
+
+            const backup = {
+                format: 'ArcanaConnectSaveBackup',
+                migrationVersion: GAME_MIGRATION_VERSION,
+                saveKey: GAME_SAVE_KEY,
+                createdAt: new Date().toISOString(),
+                gameData: save
+            };
+
+            try {
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+                a.href = url;
+                a.download = `arcana-connect-save-backup-${stamp}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+                const status = document.getElementById('firebase-cloud-status');
+                if (status) {
+                    status.textContent = 'セーブデータのバックアップを保存しました。このファイルをWeb版で復元できます';
+                    status.className = 'text-[10px] mt-2 text-center text-emerald-400';
+                }
+            } catch (e) {
+                console.error('Migration backup export failed:', e);
+                alert('バックアップの作成に失敗しました。');
+            }
+        }
+
+        function importGameMigrationBackup(event) {
+            const file = event?.target?.files?.[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const backup = JSON.parse(reader.result);
+                    const imported = backup?.gameData;
+                    if (backup?.format !== 'ArcanaConnectSaveBackup' || !imported || typeof imported !== 'object') {
+                        throw new Error('invalid backup format');
+                    }
+
+                    const current = getCurrentLocalGameSave();
+                    const currentJewel = Number(current?.jewels ?? 0);
+                    const importedJewel = Number(imported?.jewels ?? 0);
+                    const currentInventoryCount = Object.keys(current?.inventory || {}).length;
+                    const importedInventoryCount = Object.keys(imported?.inventory || {}).length;
+
+                    const summary = [
+                        `バックアップ日時: ${backup.createdAt || '不明'}`,
+                        `キャラクター数: ${importedInventoryCount}`,
+                        `ジュエル: ${Number.isFinite(importedJewel) ? importedJewel.toLocaleString() : '0'}`,
+                        '',
+                        current ? '現在の端末にも既存セーブがあります。' : '現在の端末にはセーブがありません。',
+                        'このバックアップで現在のローカルセーブを置き換えます。'
+                    ].join('\\n');
+
+                    if (!confirm(summary + '\\n\\n続行しますか？')) return;
+
+                    localStorage.setItem(GAME_SAVE_KEY, JSON.stringify(imported));
+                    localStorage.setItem('arcana_connect_save_backup_imported_v1', new Date().toISOString());
+
+                    const status = document.getElementById('firebase-cloud-status');
+                    if (status) {
+                        status.textContent = 'バックアップを復元しました。ゲームを再読み込みすると反映されます';
+                        status.className = 'text-[10px] mt-2 text-center text-emerald-400';
+                    }
+
+                    if (confirm('復元したセーブを反映するため、今すぐゲームを再読み込みしますか？')) {
+                        location.reload();
+                    }
+                } catch (e) {
+                    console.error('Migration backup import failed:', e);
+                    alert('このバックアップファイルを読み込めませんでした。Arcana Connectで作成したバックアップか確認してください。');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.onerror = () => {
+                event.target.value = '';
+                alert('バックアップファイルの読み込みに失敗しました。');
+            };
+            reader.readAsText(file);
+        }
+
+        // file:// で直接開いている場合は、Google認証ではなくデータ移行を案内する。
+        document.addEventListener('DOMContentLoaded', () => {
+            const status = document.getElementById('firebase-cloud-status');
+            if (location.protocol === 'file:' && status && getCurrentLocalGameSave()) {
+                status.textContent = '現在はHTMLを直接開いています。Google連携の前に、やり込みデータをバックアップできます';
+                status.className = 'text-[10px] mt-2 text-center text-amber-300';
+            }
+        });
+    </script>
+
     <!-- Firebase: Googleログイン + Cloud Firestoreクラウドセーブ -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
@@ -3806,6 +3932,10 @@
         }
 
         window.firebaseGoogleSignIn = async function() {
+            if (location.protocol === 'file:') {
+                setFirebaseStatus('HTMLを直接開いているためGoogleログインはできません。先に「データをバックアップ」し、Web版でそのバックアップを復元してください', 'error');
+                return;
+            }
             if (!FIREBASE_ENABLED) {
                 setFirebaseStatus('HTMLのFirebase設定を入力して有効化してください', 'error');
                 return;
@@ -3819,9 +3949,18 @@
                 const result = await signInWithPopup(firebaseAuth, provider);
                 firebaseUser = result.user;
                 setFirebaseAccountStatus(`${firebaseUser.displayName || 'Googleアカウント'} と連携中`, 'ok');
-                setFirebaseStatus(hasLocalGameSave() ? '現在の端末のセーブをクラウドへ保存します…' : 'クラウドセーブを確認しています…');
+                // 初回連携では「現在の端末データ」を優先。ただしクラウドに既存データがある場合は上書き前に確認する。
+                const ref = doc(firebaseDb, 'users', firebaseUser.uid);
+                const existing = await getDoc(ref);
+                const hasCloud = existing.exists() && !!existing.data()?.gameData;
                 if (hasLocalGameSave()) {
-                    await saveGameToCloud(true);
+                    if (hasCloud) {
+                        const useLocal = confirm('このGoogleアカウントには既存のクラウドセーブがあります。\n\n「OK」= 今の端末のやり込みデータをクラウドへ保存して上書き\n「キャンセル」= クラウドデータを端末へ読み込み');
+                        if (useLocal) await saveGameToCloud(true);
+                        else await loadGameFromCloud(true);
+                    } else {
+                        await saveGameToCloud(true);
+                    }
                 } else {
                     const loaded = await loadGameFromCloud(true);
                     if (!loaded) setFirebaseStatus('クラウドセーブがないため新規セーブとして開始します', 'normal');
