@@ -878,6 +878,17 @@
                         <div class="flex justify-between items-center mb-3"><span class="font-black text-white">効果音音量</span><span id="se-volume-value" class="text-amber-300 font-black text-sm">70%</span></div>
                         <input id="se-volume-slider" type="range" min="0" max="100" value="70" oninput="setSeVolume(this.value)" class="w-full accent-amber-400">
                     </div>
+                    <div class="bg-slate-950/80 border border-cyan-500/30 rounded-2xl p-4">
+                        <div class="text-[10px] text-cyan-300 font-black tracking-widest mb-2">CLOUD SAVE</div>
+                        <div class="font-black text-white mb-1">Googleアカウント連携</div>
+                        <div id="firebase-account-status" class="text-[10px] text-slate-400 mb-3">未連携（Firebase設定後に利用できます）</div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="firebaseGoogleSignIn()" class="bg-white text-slate-900 font-black text-xs py-2.5 rounded-xl hover:bg-slate-200 transition"><i class="fa-brands fa-google mr-1.5"></i>Googleで連携</button>
+                            <button onclick="firebaseCloudSave()" class="bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 font-black text-xs py-2.5 rounded-xl hover:bg-cyan-500/30 transition">今すぐ保存</button>
+                        </div>
+                        <button onclick="firebaseCloudLoad()" class="w-full mt-2 bg-slate-800 border border-slate-700 text-slate-200 font-black text-xs py-2.5 rounded-xl hover:border-cyan-400 transition">クラウドから読み込む</button>
+                        <div id="firebase-cloud-status" class="text-[10px] text-slate-500 mt-2 text-center">ローカル保存はこれまで通り利用できます</div>
+                    </div>
                     <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
                         <div class="text-[10px] text-purple-300 font-black tracking-widest mb-2">TITLE</div>
                         <div class="font-black text-white mb-2">称号</div>
@@ -1348,6 +1359,12 @@
             updateMailboxAlert();
             switchTab('home');
         }
+
+        // Firebaseモジュールから現在のゲームデータを安全に参照・更新できるようにする。
+        window.getPlayerData = () => playerData;
+        window.setPlayerData = (data) => {
+            playerData = data;
+        };
 
         function saveData() {
             try { localStorage.setItem('arcana_connect_save_v17', JSON.stringify(playerData)); } catch(e){}
@@ -3646,6 +3663,232 @@
                 await syncSharedRaidHpAndRender();
                 switchTab('home');
             });
+        }
+    </script>
+
+    <!-- Firebase: Googleログイン + Cloud Firestoreクラウドセーブ -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+        import {
+            getAuth,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signOut,
+            onAuthStateChanged
+        } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            serverTimestamp
+        } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+
+        // ============================================================
+        // Firebase設定
+        // Firebase Consoleで取得した値に置き換えてください。
+        // まずは false のままでもゲーム本体は動作します。
+        // ============================================================
+        const FIREBASE_ENABLED = true;
+        const firebaseConfig = {
+            apiKey: 'AIzaSyCQGKXj1Shmc3Vb54JwUvAmMJixrVQyxTs',
+            authDomain: 'arcana-26d7a.firebaseapp.com',
+            projectId: 'arcana-26d7a',
+            storageBucket: 'arcana-26d7a.firebasestorage.app',
+            messagingSenderId: '677081295078',
+            appId: '1:677081295078:web:dd2d7055362f4ed49b3327',
+            measurementId: 'G-WEQP1MXMEH'
+        };
+
+        let firebaseApp = null;
+        let firebaseAuth = null;
+        let firebaseDb = null;
+        let firebaseUser = null;
+        let cloudSaveTimer = null;
+        let firebaseReady = false;
+
+        function setFirebaseStatus(message, tone = 'normal') {
+            const el = document.getElementById('firebase-cloud-status');
+            if (!el) return;
+            el.textContent = message;
+            el.className = 'text-[10px] mt-2 text-center ' +
+                (tone === 'ok' ? 'text-emerald-400' : tone === 'error' ? 'text-rose-400' : 'text-slate-500');
+        }
+
+        function setFirebaseAccountStatus(message, tone = 'normal') {
+            const el = document.getElementById('firebase-account-status');
+            if (!el) return;
+            el.textContent = message;
+            el.className = 'text-[10px] mb-3 ' +
+                (tone === 'ok' ? 'text-emerald-400' : tone === 'error' ? 'text-rose-400' : 'text-slate-400');
+        }
+
+        function hasLocalGameSave() {
+            try {
+                return !!localStorage.getItem('arcana_connect_save_v17');
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function sanitizeForFirestore(value) {
+            if (value === undefined) return null;
+            if (typeof value === 'number' && !Number.isFinite(value)) return 0;
+            if (Array.isArray(value)) return value.map(sanitizeForFirestore);
+            if (value && typeof value === 'object') {
+                const out = {};
+                for (const [k, v] of Object.entries(value)) out[k] = sanitizeForFirestore(v);
+                return out;
+            }
+            return value;
+        }
+
+        function getCloudGameData() {
+            const currentData = typeof window.getPlayerData === 'function'
+                ? window.getPlayerData()
+                : (window.playerData || {});
+            return sanitizeForFirestore(currentData);
+        }
+
+        async function saveGameToCloud(showMessage = true) {
+            if (!firebaseReady || !firebaseUser || !firebaseDb) {
+                if (showMessage) setFirebaseStatus('Google連携後にクラウド保存できます', 'error');
+                return false;
+            }
+            try {
+                const ref = doc(firebaseDb, 'users', firebaseUser.uid);
+                await setDoc(ref, {
+                    gameData: getCloudGameData(),
+                    schemaVersion: 17,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                if (showMessage) setFirebaseStatus('クラウドに保存しました', 'ok');
+                return true;
+            } catch (e) {
+                console.error('Firebase cloud save failed:', e);
+                if (showMessage) setFirebaseStatus('クラウド保存に失敗しました', 'error');
+                return false;
+            }
+        }
+
+        async function loadGameFromCloud(showMessage = true) {
+            if (!firebaseReady || !firebaseUser || !firebaseDb) {
+                if (showMessage) setFirebaseStatus('Google連携後にクラウド読み込みできます', 'error');
+                return false;
+            }
+            try {
+                const ref = doc(firebaseDb, 'users', firebaseUser.uid);
+                const snap = await getDoc(ref);
+                if (!snap.exists() || !snap.data().gameData) {
+                    if (showMessage) setFirebaseStatus('クラウドセーブはまだありません', 'error');
+                    return false;
+                }
+                const cloudData = snap.data().gameData;
+                if (typeof window.setPlayerData === 'function') {
+                    window.setPlayerData({ ...window.getPlayerData(), ...cloudData });
+                } else {
+                    window.playerData = { ...window.playerData, ...cloudData };
+                }
+                if (typeof window.saveData === 'function') window.saveData();
+                if (typeof window.updateHeaderUI === 'function') window.updateHeaderUI();
+                if (typeof window.updateHomeDisplay === 'function') window.updateHomeDisplay();
+                if (typeof window.renderPartyUI === 'function') window.renderPartyUI();
+                if (typeof window.renderTowerUI === 'function') window.renderTowerUI();
+                if (typeof window.renderFriendsUI === 'function') window.renderFriendsUI();
+                if (typeof window.updateMailboxAlert === 'function') window.updateMailboxAlert();
+                if (showMessage) setFirebaseStatus('クラウドデータを読み込みました', 'ok');
+                return true;
+            } catch (e) {
+                console.error('Firebase cloud load failed:', e);
+                if (showMessage) setFirebaseStatus('クラウド読み込みに失敗しました', 'error');
+                return false;
+            }
+        }
+
+        window.firebaseGoogleSignIn = async function() {
+            if (!FIREBASE_ENABLED) {
+                setFirebaseStatus('HTMLのFirebase設定を入力して有効化してください', 'error');
+                return;
+            }
+            if (!firebaseReady) {
+                setFirebaseStatus('Firebaseが初期化されていません', 'error');
+                return;
+            }
+            try {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(firebaseAuth, provider);
+                firebaseUser = result.user;
+                setFirebaseAccountStatus(`${firebaseUser.displayName || 'Googleアカウント'} と連携中`, 'ok');
+                setFirebaseStatus(hasLocalGameSave() ? '現在の端末のセーブをクラウドへ保存します…' : 'クラウドセーブを確認しています…');
+                if (hasLocalGameSave()) {
+                    await saveGameToCloud(true);
+                } else {
+                    const loaded = await loadGameFromCloud(true);
+                    if (!loaded) setFirebaseStatus('クラウドセーブがないため新規セーブとして開始します', 'normal');
+                }
+            } catch (e) {
+                console.error('Google sign-in failed:', e);
+                setFirebaseStatus(`Google連携に失敗しました: ${e.code || e.message || 'unknown error'}`, 'error');
+            }
+        };
+
+        window.firebaseCloudSave = async function() {
+            await saveGameToCloud(true);
+        };
+
+        window.firebaseCloudLoad = async function() {
+            if (!firebaseUser) {
+                setFirebaseStatus('先にGoogleアカウントを連携してください', 'error');
+                return;
+            }
+            if (!confirm('現在の端末のセーブをクラウドデータで上書きします。よろしいですか？')) return;
+            await loadGameFromCloud(true);
+            if (typeof window.updateHomeDisplay === 'function') window.updateHomeDisplay();
+        };
+
+        window.firebaseGoogleSignOut = async function() {
+            if (!firebaseAuth) return;
+            await signOut(firebaseAuth);
+        };
+
+        function scheduleCloudSave() {
+            if (!firebaseUser || !firebaseReady) return;
+            clearTimeout(cloudSaveTimer);
+            cloudSaveTimer = setTimeout(() => saveGameToCloud(false), 1200);
+        }
+
+        // 既存のlocalStorage保存を壊さず、Google連携中だけクラウド保存も行います。
+        const originalSaveData = window.saveData;
+        window.saveData = function() {
+            if (typeof originalSaveData === 'function') originalSaveData();
+            scheduleCloudSave();
+        };
+
+        try {
+            if (FIREBASE_ENABLED && firebaseConfig.apiKey !== 'YOUR_API_KEY' && firebaseConfig.projectId !== 'YOUR_PROJECT_ID') {
+                firebaseApp = initializeApp(firebaseConfig);
+                firebaseAuth = getAuth(firebaseApp);
+                firebaseDb = getFirestore(firebaseApp);
+                firebaseReady = true;
+
+                onAuthStateChanged(firebaseAuth, async (user) => {
+                    firebaseUser = user || null;
+                    if (user) {
+                        setFirebaseAccountStatus(`${user.displayName || 'Googleアカウント'} と連携中`, 'ok');
+                        // 別端末など、ローカルセーブが無い場合だけ自動でクラウドから復元。
+                        if (!hasLocalGameSave()) await loadGameFromCloud(false);
+                    } else {
+                        setFirebaseAccountStatus('未連携', 'normal');
+                        setFirebaseStatus('ローカル保存はこれまで通り利用できます', 'normal');
+                    }
+                });
+            } else {
+                setFirebaseAccountStatus('未設定（Firebase Consoleの設定が必要）', 'normal');
+            }
+        } catch (e) {
+            console.error('Firebase initialization failed:', e);
+            setFirebaseAccountStatus('Firebase設定エラー', 'error');
+            setFirebaseStatus('Firebaseの設定値を確認してください', 'error');
         }
     </script>
 </body>
