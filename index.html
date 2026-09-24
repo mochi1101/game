@@ -143,6 +143,44 @@
         }
         .animate-cutin { animation: cutin-slide 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
+        /* スマホ向け共通ナビ最適化：5個のアイコンが必ず画面内に収まる */
+        #bottom-nav {
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+            padding-left: max(4px, env(safe-area-inset-left));
+            padding-right: max(4px, env(safe-area-inset-right));
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        #bottom-nav .nav-btn {
+            flex: 1 1 0;
+            min-width: 0;
+            width: 20%;
+            max-width: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+        }
+        @media (max-width: 640px) {
+            #bottom-nav { height: 64px; padding-left: 2px; padding-right: 2px; }
+            #bottom-nav .nav-btn { padding-left: 0 !important; padding-right: 0 !important; }
+            #bottom-nav .nav-custom-img-icon {
+                width: clamp(44px, 14vw, 54px);
+                height: clamp(44px, 14vw, 54px);
+                max-width: 100%;
+                flex: 0 0 auto;
+            }
+            #bottom-nav .friend-nav-icon {
+                width: clamp(42px, 13vw, 50px);
+                height: clamp(42px, 13vw, 50px);
+                max-width: 100%;
+                flex: 0 0 auto;
+            }
+            #bottom-nav .nav-btn.active-tab .nav-custom-img-icon { transform: scale(1.06); }
+            #bottom-nav .nav-btn.active-tab .friend-nav-icon { transform: scale(1.05); }
+        }
+
         .nav-custom-img-icon {
             height: clamp(60px, 10.5vh, 90px);
             width: clamp(60px, 10.5vh, 90px);
@@ -871,8 +909,8 @@
                 </div>
                 <div class="space-y-4">
                     <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
-                        <div class="flex justify-between items-center mb-3"><span class="font-black text-white">BGM音量</span><span id="bgm-volume-value" class="text-cyan-300 font-black text-sm">60%</span></div>
-                        <input id="bgm-volume-slider" type="range" min="0" max="100" value="60" oninput="setBgmVolume(this.value)" class="w-full accent-cyan-400">
+                        <div class="flex justify-between items-center mb-3"><span class="font-black text-white">BGM音量</span><span id="bgm-volume-value" class="text-cyan-300 font-black text-sm">25%</span></div>
+                        <input id="bgm-volume-slider" type="range" min="0" max="100" value="25" oninput="setBgmVolume(this.value)" class="w-full accent-cyan-400">
                     </div>
                     <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
                         <div class="flex justify-between items-center mb-3"><span class="font-black text-white">効果音音量</span><span id="se-volume-value" class="text-amber-300 font-black text-sm">70%</span></div>
@@ -887,6 +925,7 @@
                             <button onclick="firebaseCloudSave()" class="bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 font-black text-xs py-2.5 rounded-xl hover:bg-cyan-500/30 transition">今すぐ保存</button>
                         </div>
                         <button onclick="firebaseCloudLoad()" class="w-full mt-2 bg-slate-800 border border-slate-700 text-slate-200 font-black text-xs py-2.5 rounded-xl hover:border-cyan-400 transition">クラウドから読み込む</button>
+                        <button onclick="firebaseGoogleSignOut()" class="w-full mt-2 bg-rose-500/10 border border-rose-400/30 text-rose-200 font-black text-[11px] py-2.5 rounded-xl hover:bg-rose-500/20 transition"><i class="fa-solid fa-link-slash mr-1"></i>Google連携を解除</button>
                         <div class="grid grid-cols-2 gap-2 mt-2">
                             <button onclick="exportGameMigrationBackup()" class="bg-amber-500/10 border border-amber-400/30 text-amber-200 font-black text-[11px] py-2.5 rounded-xl hover:bg-amber-500/20 transition"><i class="fa-solid fa-download mr-1"></i>データをバックアップ</button>
                             <button onclick="document.getElementById('game-migration-file').click()" class="bg-slate-800 border border-slate-700 text-slate-200 font-black text-[11px] py-2.5 rounded-xl hover:border-amber-400 transition"><i class="fa-solid fa-upload mr-1"></i>バックアップを復元</button>
@@ -926,7 +965,7 @@
     <script>
         // オーディオ設定（BGMと効果音を個別管理）
         let audioCtx = null;
-        let bgmVolume = 0.6;
+        let bgmVolume = 0.25;
         let seVolume = 0.7;
         const battleBgm = new Audio('Steel_Against_the_Tide.mp3');
         battleBgm.loop = true;
@@ -939,6 +978,7 @@
 
         function applyAudioSettings() {
             battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
+            battleBgm.muted = bgmVolume <= 0;
             const b = document.getElementById('bgm-volume-slider');
             const s = document.getElementById('se-volume-slider');
             const bv = document.getElementById('bgm-volume-value');
@@ -950,11 +990,26 @@
         }
 
         function setBgmVolume(value) {
-            bgmVolume = Number(value) / 100;
+            bgmVolume = Math.max(0, Math.min(1, Number(value) / 100));
             playerData.bgmVolume = bgmVolume;
             battleBgm.volume = bgmVolume;
             const el = document.getElementById('bgm-volume-value');
             if (el) el.innerText = Math.round(bgmVolume * 100) + '%';
+
+            if (bgmVolume <= 0) {
+                // 0%にしたら確実に停止。ただし、再度上げた時に再生できるよう
+                // 「停止しただけ」で、再生不能な状態にはしない。
+                battleBgm.muted = true;
+                battleBgm.pause();
+            } else {
+                battleBgm.muted = false;
+                // 戦闘中に0%→任意の音量へ戻した場合は、その場で再生を再開する。
+                const battleScreen = document.getElementById('screen-battle');
+                const inBattle = battleScreen && !battleScreen.classList.contains('hidden');
+                if (inBattle && battleBgm.paused) {
+                    battleBgm.play().catch(() => {});
+                }
+            }
             saveData();
         }
 
@@ -968,6 +1023,9 @@
 
         function playBattleBgm() {
             applyAudioSettings();
+            if (bgmVolume <= 0) { battleBgm.pause(); return; }
+            battleBgm.muted = false;
+            battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
             battleBgm.currentTime = 0;
             battleBgm.play().catch(() => {});
         }
@@ -1259,7 +1317,7 @@
             towerTitle: '',
             titles: [],
             equippedTitle: '',
-            bgmVolume: 0.6,
+            bgmVolume: 0.25,
             seVolume: 0.7,
             towerFloor: 1,
             towerCycle: 1,
@@ -1403,10 +1461,10 @@
             if (!Array.isArray(playerData.titles)) playerData.titles = [];
             if (playerData.towerTitle && !playerData.titles.includes(playerData.towerTitle)) playerData.titles.push(playerData.towerTitle);
             if (typeof playerData.equippedTitle !== 'string') playerData.equippedTitle = '';
-            if (playerData.bgmVolume == null) playerData.bgmVolume = 0.6;
+            if (playerData.bgmVolume == null) playerData.bgmVolume = 0.25;
             if (playerData.seVolume == null) playerData.seVolume = 0.7;
             if (!getOwnedTitles().includes(playerData.equippedTitle)) playerData.equippedTitle = '';
-            bgmVolume = Number.isFinite(Number(playerData.bgmVolume)) ? Math.max(0, Math.min(1, Number(playerData.bgmVolume))) : 0.6;
+            bgmVolume = Number.isFinite(Number(playerData.bgmVolume)) ? Math.max(0, Math.min(1, Number(playerData.bgmVolume))) : 0.25;
             seVolume = Number.isFinite(Number(playerData.seVolume)) ? Math.max(0, Math.min(1, Number(playerData.seVolume))) : 0.7;
             if (!Number.isFinite(Number(playerData.towerFloor)) || Number(playerData.towerFloor) < 1) playerData.towerFloor = 1;
             if (!Array.isArray(playerData.mailbox)) playerData.mailbox = [];
@@ -1426,6 +1484,14 @@
         }
 
         function switchTab(tabId) {
+            // 戦闘中は上下の共通ナビを完全に隠して、戦闘エリアを最大化する。
+            // 戦闘中に誤タップでホーム等へ戻ってしまうことも防止する。
+            const gameHeader = document.getElementById('game-header');
+            const bottomNav = document.getElementById('bottom-nav');
+            const isBattle = tabId === 'battle';
+            if (gameHeader) gameHeader.classList.toggle('hidden', isBattle);
+            if (bottomNav) bottomNav.classList.toggle('hidden', isBattle);
+
             if (tabId !== 'battle') stopBattleBgm();
             document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(`screen-${tabId}`)?.classList.remove('hidden');
@@ -3986,8 +4052,20 @@
         };
 
         window.firebaseGoogleSignOut = async function() {
-            if (!firebaseAuth) return;
-            await signOut(firebaseAuth);
+            if (!firebaseAuth || !firebaseUser) {
+                setFirebaseStatus('現在、Google連携されていません', 'normal');
+                return;
+            }
+            const name = firebaseUser.displayName || 'Googleアカウント';
+            if (!confirm(`${name}とのGoogle連携をこのゲームから解除します。\n\nクラウド上のセーブデータは削除されません。\nこの端末のローカルセーブも削除されません。\n\n連携を解除しますか？`)) return;
+            try {
+                await signOut(firebaseAuth);
+                setFirebaseAccountStatus('未連携', 'normal');
+                setFirebaseStatus('Google連携を解除しました。ローカルセーブはそのまま残っています', 'ok');
+            } catch (e) {
+                console.error('Google sign-out failed:', e);
+                setFirebaseStatus(`Google連携の解除に失敗しました: ${e.code || e.message || 'unknown error'}`, 'error');
+            }
         };
 
         function scheduleCloudSave() {
