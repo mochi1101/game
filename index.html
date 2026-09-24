@@ -73,6 +73,8 @@
         .sprite-luciferia  { background-image: url('ChatGPT Image 2026年9月21日 09_19_42.png'); }
         .sprite-bahamut    { background-image: url('ChatGPT Image 2026年9月21日 09_42_34.png'); }
         .sprite-chronos    { background-image: url('ChatGPT Image 2026年9月21日 09_47_46 (1).png'); }
+        .sprite-astral     { background-image: url('enemy9_astral_blue.png'); }
+        .sprite-crimson    { background-image: url('enemy10_crimson_purple.png'); }
 
 
         .enemy-sprite.sprite-behemoth {
@@ -139,8 +141,8 @@
         .animate-cutin { animation: cutin-slide 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
         .nav-custom-img-icon {
-            height: clamp(66px, 11.2vh, 96px);
-            width: clamp(66px, 11.2vh, 96px);
+            height: clamp(60px, 10.5vh, 90px);
+            width: clamp(60px, 10.5vh, 90px);
             max-width: none;
             object-fit: contain;
             transition: transform 0.2s, filter 0.2s;
@@ -339,7 +341,7 @@
                         <button onclick="switchTab('quest')" class="relative overflow-hidden group bg-gradient-to-r from-indigo-950 via-indigo-900/80 to-slate-900 border border-indigo-500/50 hover:border-indigo-400 rounded-2xl p-2.5 md:p-3 text-left shadow-xl active:scale-95 transition">
                             <div class="absolute -right-2 -bottom-3 text-indigo-500/20 text-5xl md:text-6xl group-hover:scale-110 transition"><i class="fa-solid fa-dragon"></i></div>
                             <div class="text-[9px] md:text-[10px] text-indigo-300 font-bold">QUEST</div>
-                            <div class="text-xs md:text-sm font-black text-white">全8章 クエスト討伐</div>
+                            <div class="text-xs md:text-sm font-black text-white">全10章 クエスト討伐</div>
                             <div class="text-[9px] md:text-[10px] text-slate-400 mt-0.5">装備ドロップ & 章順次解放</div>
                         </button>
                     </div>
@@ -866,7 +868,9 @@
             'luciferia': { name: '魔王・深淵のルシフェリア', element: 'dark', spriteClass: 'sprite-luciferia' },
             'bahamut': { name: '滅世竜バハムート', element: 'fire', spriteClass: 'sprite-bahamut' },
             'chronos': { name: '虚無竜クロノス', element: 'dark', spriteClass: 'sprite-chronos' },
-            'behemoth': { name: '終焉巨神ベヒモス', element: 'fire', spriteClass: 'sprite-behemoth' }
+            'behemoth': { name: '終焉巨神ベヒモス', element: 'fire', spriteClass: 'sprite-behemoth' },
+            'astral': { name: '星蝕の蒼晶竜', element: 'water', spriteClass: 'sprite-astral' },
+            'crimson': { name: '紅蓮終焉の魔竜', element: 'fire', spriteClass: 'sprite-crimson' }
         };
 
         // スキル性能の個別化 (target: single/all/heal/buff, power, statusEffect)
@@ -966,6 +970,14 @@
             { id: 8, chapter: 8, name: '8章：虚無の深淵', ap: 30, rewardExp: 500, rewardGems: 1000, waves: [
                 { enemies: [{ type: 'bahamut', hp: 10000, atk: 220 }, { type: 'luciferia', hp: 8000, atk: 200 }] }, 
                 { enemies: [{ type: 'chronos', hp: 21000, atk: 350, isBoss: true }] }
+            ] }
+            ,{ id: 9, chapter: 9, name: '9章：星蝕の蒼晶領域', ap: 35, rewardExp: 650, rewardGems: 1200, waves: [
+                { enemies: [{ type: 'chronos', hp: 15000, atk: 300 }, { type: 'astral', hp: 12000, atk: 260 }] },
+                { enemies: [{ type: 'astral', hp: 30000, atk: 480, isBoss: true }] }
+            ] },
+            { id: 10, chapter: 10, name: '10章：紅蓮終焉の魔境', ap: 40, rewardExp: 850, rewardGems: 1600, waves: [
+                { enemies: [{ type: 'crimson', hp: 18000, atk: 340 }, { type: 'bahamut', hp: 14000, atk: 280 }] },
+                { enemies: [{ type: 'crimson', hp: 38000, atk: 560, isBoss: true }] }
             ] }
         ];
 
@@ -1079,6 +1091,9 @@
             } catch(e){}
 
             if (!Array.isArray(playerData.friends)) playerData.friends = [];
+            if (!Array.isArray(playerData.clearedQuests)) playerData.clearedQuests = [];
+            if (!Array.isArray(playerData.clearedTowerFloors)) playerData.clearedTowerFloors = [];
+            if (!Number.isFinite(Number(playerData.towerFloor)) || Number(playerData.towerFloor) < 1) playerData.towerFloor = 1;
             if (!playerData.friendCode || !/^\d{8}$/.test(String(playerData.friendCode))) {
                 playerData.friendCode = String(Math.floor(10000000 + Math.random() * 90000000));
                 saveData();
@@ -2043,6 +2058,8 @@
                 if (q.chapter === 6) descText = '※ ラスボス「魔王ルシフェリア」が立ち塞がる！';
                 if (q.chapter === 7) descText = '※ 最凶の真ボス「滅世竜バハムート」降臨！';
                 if (q.chapter === 8) descText = '※ 虚無より出でし「虚無竜クロノス」降臨！';
+                if (q.chapter === 9) descText = '※ 星蝕を喰らう「星蝕の蒼晶竜」降臨！';
+                if (q.chapter === 10) descText = '※ 紅蓮の終焉「紅蓮終焉の魔竜」降臨！';
 
                 card.innerHTML = `
                     <div>
@@ -2094,13 +2111,17 @@
 
             const floor = playerData.towerFloor;
             const isChronosFloor = floor >= 48;
-            const isBahamutFloor = !isChronosFloor && (floor >= 45 || (floor % 10 === 5 && floor >= 25));
-            const isLuciferiaFloor = !isChronosFloor && !isBahamutFloor && (floor % 10 === 0 || floor >= 40);
+            const isCrimsonFloor = !isChronosFloor && floor >= 46 && floor <= 47;
+            const isBahamutFloor = !isChronosFloor && !isCrimsonFloor && (floor >= 45 || (floor % 10 === 5 && floor >= 25));
+            const isAstralFloor = !isChronosFloor && !isCrimsonFloor && !isBahamutFloor && floor >= 41 && floor <= 44;
+            const isLuciferiaFloor = !isChronosFloor && !isCrimsonFloor && !isBahamutFloor && !isAstralFloor && (floor % 10 === 0 || floor >= 40);
 
             let enemyName = '階層守護竜';
             let attr = '火/水/風';
             if (isChronosFloor) { enemyName = '虚無竜クロノス'; attr = '闇'; }
+            else if (isCrimsonFloor) { enemyName = '紅蓮終焉の魔竜'; attr = '火'; }
             else if (isBahamutFloor) { enemyName = '滅世竜バハムート'; attr = '火'; }
+            else if (isAstralFloor) { enemyName = '星蝕の蒼晶竜'; attr = '水'; }
             else if (isLuciferiaFloor) { enemyName = '魔王ルシフェリア'; attr = '闇'; }
 
             const enemyInfoText = `ボス: ${enemyName} | 属性: ${attr} | 推奨戦闘力: ${800 + (floor * 150)}`;
@@ -2113,13 +2134,17 @@
 
             const floor = playerData.towerFloor;
             const isChronosFloor = floor >= 48;
-            const isBahamutFloor = !isChronosFloor && (floor >= 45 || (floor % 10 === 5 && floor >= 25));
-            const isLuciferiaFloor = !isChronosFloor && !isBahamutFloor && (floor % 10 === 0 || floor >= 40);
+            const isCrimsonFloor = !isChronosFloor && floor >= 46 && floor <= 47;
+            const isBahamutFloor = !isChronosFloor && !isCrimsonFloor && (floor >= 45 || (floor % 10 === 5 && floor >= 25));
+            const isAstralFloor = !isChronosFloor && !isCrimsonFloor && !isBahamutFloor && floor >= 41 && floor <= 44;
+            const isLuciferiaFloor = !isChronosFloor && !isCrimsonFloor && !isBahamutFloor && !isAstralFloor && (floor % 10 === 0 || floor >= 40);
 
             let enemyType = 'dragon';
             let enemyName = `階層守護竜`;
             if (isChronosFloor) { enemyType = 'chronos'; enemyName = '虚無竜クロノス'; }
+            else if (isCrimsonFloor) { enemyType = 'crimson'; enemyName = '紅蓮終焉の魔竜'; }
             else if (isBahamutFloor) { enemyType = 'bahamut'; enemyName = '滅世竜バハムート'; }
+            else if (isAstralFloor) { enemyType = 'astral'; enemyName = '星蝕の蒼晶竜'; }
             else if (isLuciferiaFloor) { enemyType = 'luciferia'; enemyName = '魔王・深淵のルシフェリア'; }
 
             const towerQuest = {
@@ -2389,6 +2414,9 @@
         }
 
         let currentBattle = null;
+        // AUTO設定は戦闘をまたいでも維持する。
+        // 前の戦闘でAUTOをONにしていた場合、次の戦闘でも自動でスキルを発動する。
+        let autoBattleEnabled = false;
 
         function startBattle(quest, activeParty) {
             battleSpeed = 1;
@@ -2421,7 +2449,7 @@
                         status: null // バフ/デバフ状態 (poison, stun, atk_up, def_down)
                     };
                 }),
-                isAuto: false, inProgress: true
+                isAuto: autoBattleEnabled, inProgress: true
             };
 
             switchTab('battle');
@@ -2632,6 +2660,7 @@
         function toggleAutoBattle() {
             if(!currentBattle) return;
             currentBattle.isAuto = !currentBattle.isAuto;
+            autoBattleEnabled = currentBattle.isAuto;
             document.getElementById('auto-status').innerText = currentBattle.isAuto ? 'ON' : 'OFF';
             document.getElementById('auto-status').className = currentBattle.isAuto ? 'text-emerald-400 font-extrabold' : 'text-rose-400 font-extrabold';
         }
@@ -2840,23 +2869,47 @@
                     return;
                 } else {
                     // startBattle() で保持している現在のクエストを参照する。
-                    // ここで未定義の q を参照すると勝利処理中に ReferenceError が発生し、
-                    // 勝利後の画面遷移が止まってしまう。
                     const clearedQuest = currentBattle.quest;
                     const rewardGems = Number(clearedQuest.rewardGems) || 0;
 
-                    // クリア報酬のジュエルは勝利するたびに加算する。
-                    // clearedQuests は「初回クリア済み」の記録だけに使用する。
+                    // タワーは通常クエストとは別管理。
+                    // 以前の処理ではタワー勝利時に towerFloor を進める処理がなく、
+                    // セーブされた階層から先へ進めなくなっていた。
+                    if (clearedQuest.id === 999) {
+                        const clearedFloor = Number(playerData.towerFloor) || 1;
+                        if (!Array.isArray(playerData.clearedTowerFloors)) {
+                            playerData.clearedTowerFloors = [];
+                        }
+
+                        if (!isCurrentStageClearedBefore) {
+                            if (!playerData.clearedTowerFloors.includes(clearedFloor)) {
+                                playerData.clearedTowerFloors.push(clearedFloor);
+                            }
+                            playerData.towerFloor = Math.max(clearedFloor + 1, Number(playerData.towerFloor) || 1);
+                        }
+
+                        playerData.gems = Number(playerData.gems) || 0;
+                        playerData.gems += rewardGems;
+                        addPlayerExp(clearedQuest.rewardExp);
+                        saveData();
+                        updateHeaderUI();
+                        renderTowerUI();
+
+                        showCustomModal('VICTORY!', `タワー第${clearedFloor}階層をクリアしました！\n次の階層: 第${playerData.towerFloor}階\n報酬: ${rewardGems} ジュエル & Exp獲得！`);
+                        switchTab('tower');
+                        return;
+                    }
+
+                    // 通常クエストのクリア処理。
+                    if (!Array.isArray(playerData.clearedQuests)) playerData.clearedQuests = [];
                     if (!playerData.clearedQuests.includes(clearedQuest.id)) {
                         playerData.clearedQuests.push(clearedQuest.id);
                     }
 
                     playerData.gems = Number(playerData.gems) || 0;
                     playerData.gems += rewardGems;
-
                     addPlayerExp(clearedQuest.rewardExp);
 
-                    // 勝利報酬を即保存してヘッダー表示にも反映する。
                     saveData();
                     updateHeaderUI();
 
