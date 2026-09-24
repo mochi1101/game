@@ -143,44 +143,6 @@
         }
         .animate-cutin { animation: cutin-slide 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        /* スマホ向け共通ナビ最適化：5個のアイコンが必ず画面内に収まる */
-        #bottom-nav {
-            width: 100%;
-            box-sizing: border-box;
-            overflow: hidden;
-            padding-left: max(4px, env(safe-area-inset-left));
-            padding-right: max(4px, env(safe-area-inset-right));
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-        #bottom-nav .nav-btn {
-            flex: 1 1 0;
-            min-width: 0;
-            width: 20%;
-            max-width: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: visible;
-        }
-        @media (max-width: 640px) {
-            #bottom-nav { height: 64px; padding-left: 2px; padding-right: 2px; }
-            #bottom-nav .nav-btn { padding-left: 0 !important; padding-right: 0 !important; }
-            #bottom-nav .nav-custom-img-icon {
-                width: clamp(44px, 14vw, 54px);
-                height: clamp(44px, 14vw, 54px);
-                max-width: 100%;
-                flex: 0 0 auto;
-            }
-            #bottom-nav .friend-nav-icon {
-                width: clamp(42px, 13vw, 50px);
-                height: clamp(42px, 13vw, 50px);
-                max-width: 100%;
-                flex: 0 0 auto;
-            }
-            #bottom-nav .nav-btn.active-tab .nav-custom-img-icon { transform: scale(1.06); }
-            #bottom-nav .nav-btn.active-tab .friend-nav-icon { transform: scale(1.05); }
-        }
-
         .nav-custom-img-icon {
             height: clamp(60px, 10.5vh, 90px);
             width: clamp(60px, 10.5vh, 90px);
@@ -204,6 +166,38 @@
         .nav-btn.active-tab .friend-nav-icon {
             filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.95));
             transform: scale(1.08);
+        }
+
+        /* スマホでは5つの下部メニューを均等配置し、右端のフレンドも必ず画面内に収める */
+        @media (max-width: 767px) {
+            #bottom-nav {
+                height: 58px;
+                padding-left: 2px;
+                padding-right: 2px;
+                gap: 0;
+            }
+            #bottom-nav .nav-btn {
+                flex: 1 1 0%;
+                min-width: 0;
+                width: 20%;
+                padding-left: 0;
+                padding-right: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            #bottom-nav .nav-custom-img-icon,
+            #bottom-nav .friend-nav-icon {
+                width: 46px;
+                height: 46px;
+                max-width: 46px;
+                max-height: 46px;
+                flex: 0 0 46px;
+            }
+            #bottom-nav .nav-btn.active-tab .nav-custom-img-icon,
+            #bottom-nav .nav-btn.active-tab .friend-nav-icon {
+                transform: scale(1.05);
+            }
         }
         .friend-card {
             background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(30,41,59,0.9));
@@ -971,14 +965,22 @@
         battleBgm.loop = true;
         battleBgm.preload = 'auto';
 
+        // 通常画面用BGM（戦闘中以外）
+        const nonBattleBgm = new Audio('Beyond_the_Village_Gate.mp3');
+        nonBattleBgm.loop = true;
+        nonBattleBgm.preload = 'auto';
+
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
         function applyAudioSettings() {
-            battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
+            const volume = Math.max(0, Math.min(1, bgmVolume));
+            battleBgm.volume = volume;
             battleBgm.muted = bgmVolume <= 0;
+            nonBattleBgm.volume = volume;
+            nonBattleBgm.muted = bgmVolume <= 0;
             const b = document.getElementById('bgm-volume-slider');
             const s = document.getElementById('se-volume-slider');
             const bv = document.getElementById('bgm-volume-value');
@@ -990,26 +992,26 @@
         }
 
         function setBgmVolume(value) {
-            bgmVolume = Math.max(0, Math.min(1, Number(value) / 100));
+            bgmVolume = Number(value) / 100;
             playerData.bgmVolume = bgmVolume;
-            battleBgm.volume = bgmVolume;
-            const el = document.getElementById('bgm-volume-value');
-            if (el) el.innerText = Math.round(bgmVolume * 100) + '%';
-
+            const volume = Math.max(0, Math.min(1, bgmVolume));
+            battleBgm.volume = volume;
+            battleBgm.muted = bgmVolume <= 0;
+            nonBattleBgm.volume = volume;
+            nonBattleBgm.muted = bgmVolume <= 0;
             if (bgmVolume <= 0) {
-                // 0%にしたら確実に停止。ただし、再度上げた時に再生できるよう
-                // 「停止しただけ」で、再生不能な状態にはしない。
-                battleBgm.muted = true;
                 battleBgm.pause();
+                nonBattleBgm.pause();
             } else {
-                battleBgm.muted = false;
-                // 戦闘中に0%→任意の音量へ戻した場合は、その場で再生を再開する。
-                const battleScreen = document.getElementById('screen-battle');
-                const inBattle = battleScreen && !battleScreen.classList.contains('hidden');
-                if (inBattle && battleBgm.paused) {
-                    battleBgm.play().catch(() => {});
+                const battleVisible = !document.getElementById('screen-battle')?.classList.contains('hidden');
+                if (battleVisible) {
+                    stopNonBattleBgm();
+                } else if (nonBattleBgm.paused) {
+                    nonBattleBgm.play().catch(() => {});
                 }
             }
+            const el = document.getElementById('bgm-volume-value');
+            if (el) el.innerText = Math.round(bgmVolume * 100) + '%';
             saveData();
         }
 
@@ -1023,6 +1025,7 @@
 
         function playBattleBgm() {
             applyAudioSettings();
+            stopNonBattleBgm();
             if (bgmVolume <= 0) { battleBgm.pause(); return; }
             battleBgm.muted = false;
             battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
@@ -1033,6 +1036,20 @@
         function stopBattleBgm() {
             battleBgm.pause();
             battleBgm.currentTime = 0;
+        }
+
+        function playNonBattleBgm() {
+            applyAudioSettings();
+            stopBattleBgm();
+            if (bgmVolume <= 0) { nonBattleBgm.pause(); return; }
+            nonBattleBgm.muted = false;
+            nonBattleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
+            nonBattleBgm.play().catch(() => {});
+        }
+
+        function stopNonBattleBgm() {
+            nonBattleBgm.pause();
+            nonBattleBgm.currentTime = 0;
         }
 
         function getOwnedTitles() {
@@ -1389,7 +1406,9 @@
         }
 
         function handleTitleTap() {
+            initAudio();
             playSE('skill');
+            playNonBattleBgm();
             if (!playerData.name || playerData.name === '' || playerData.name === '召喚士') {
                 const modal = document.getElementById('name-modal');
                 modal.classList.remove('hidden');
@@ -1492,9 +1511,17 @@
             if (gameHeader) gameHeader.classList.toggle('hidden', isBattle);
             if (bottomNav) bottomNav.classList.toggle('hidden', isBattle);
 
-            if (tabId !== 'battle') stopBattleBgm();
+            if (tabId === 'battle') {
+                stopNonBattleBgm();
+            } else {
+                stopBattleBgm();
+            }
             document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(`screen-${tabId}`)?.classList.remove('hidden');
+
+            if (tabId !== 'battle') {
+                playNonBattleBgm();
+            }
 
             document.querySelectorAll('.nav-btn').forEach(b => {
                 b.classList.remove('text-amber-400', 'active-tab');
