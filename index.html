@@ -167,38 +167,6 @@
             filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.95));
             transform: scale(1.08);
         }
-
-        /* スマホでは5つの下部メニューを均等配置し、右端のフレンドも必ず画面内に収める */
-        @media (max-width: 767px) {
-            #bottom-nav {
-                height: 58px;
-                padding-left: 2px;
-                padding-right: 2px;
-                gap: 0;
-            }
-            #bottom-nav .nav-btn {
-                flex: 1 1 0%;
-                min-width: 0;
-                width: 20%;
-                padding-left: 0;
-                padding-right: 0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            #bottom-nav .nav-custom-img-icon,
-            #bottom-nav .friend-nav-icon {
-                width: 46px;
-                height: 46px;
-                max-width: 46px;
-                max-height: 46px;
-                flex: 0 0 46px;
-            }
-            #bottom-nav .nav-btn.active-tab .nav-custom-img-icon,
-            #bottom-nav .nav-btn.active-tab .friend-nav-icon {
-                transform: scale(1.05);
-            }
-        }
         .friend-card {
             background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(30,41,59,0.9));
             border: 1px solid rgba(56,189,248,0.28);
@@ -965,22 +933,14 @@
         battleBgm.loop = true;
         battleBgm.preload = 'auto';
 
-        // 通常画面用BGM（戦闘中以外）
-        const nonBattleBgm = new Audio('Beyond_the_Village_Gate.mp3');
-        nonBattleBgm.loop = true;
-        nonBattleBgm.preload = 'auto';
-
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
         function applyAudioSettings() {
-            const volume = Math.max(0, Math.min(1, bgmVolume));
-            battleBgm.volume = volume;
+            battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
             battleBgm.muted = bgmVolume <= 0;
-            nonBattleBgm.volume = volume;
-            nonBattleBgm.muted = bgmVolume <= 0;
             const b = document.getElementById('bgm-volume-slider');
             const s = document.getElementById('se-volume-slider');
             const bv = document.getElementById('bgm-volume-value');
@@ -994,22 +954,9 @@
         function setBgmVolume(value) {
             bgmVolume = Number(value) / 100;
             playerData.bgmVolume = bgmVolume;
-            const volume = Math.max(0, Math.min(1, bgmVolume));
-            battleBgm.volume = volume;
+            battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
             battleBgm.muted = bgmVolume <= 0;
-            nonBattleBgm.volume = volume;
-            nonBattleBgm.muted = bgmVolume <= 0;
-            if (bgmVolume <= 0) {
-                battleBgm.pause();
-                nonBattleBgm.pause();
-            } else {
-                const battleVisible = !document.getElementById('screen-battle')?.classList.contains('hidden');
-                if (battleVisible) {
-                    stopNonBattleBgm();
-                } else if (nonBattleBgm.paused) {
-                    nonBattleBgm.play().catch(() => {});
-                }
-            }
+            if (bgmVolume <= 0) { battleBgm.pause(); }
             const el = document.getElementById('bgm-volume-value');
             if (el) el.innerText = Math.round(bgmVolume * 100) + '%';
             saveData();
@@ -1025,7 +972,6 @@
 
         function playBattleBgm() {
             applyAudioSettings();
-            stopNonBattleBgm();
             if (bgmVolume <= 0) { battleBgm.pause(); return; }
             battleBgm.muted = false;
             battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
@@ -1036,20 +982,6 @@
         function stopBattleBgm() {
             battleBgm.pause();
             battleBgm.currentTime = 0;
-        }
-
-        function playNonBattleBgm() {
-            applyAudioSettings();
-            stopBattleBgm();
-            if (bgmVolume <= 0) { nonBattleBgm.pause(); return; }
-            nonBattleBgm.muted = false;
-            nonBattleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
-            nonBattleBgm.play().catch(() => {});
-        }
-
-        function stopNonBattleBgm() {
-            nonBattleBgm.pause();
-            nonBattleBgm.currentTime = 0;
         }
 
         function getOwnedTitles() {
@@ -1406,9 +1338,7 @@
         }
 
         function handleTitleTap() {
-            initAudio();
             playSE('skill');
-            playNonBattleBgm();
             if (!playerData.name || playerData.name === '' || playerData.name === '召喚士') {
                 const modal = document.getElementById('name-modal');
                 modal.classList.remove('hidden');
@@ -1511,17 +1441,9 @@
             if (gameHeader) gameHeader.classList.toggle('hidden', isBattle);
             if (bottomNav) bottomNav.classList.toggle('hidden', isBattle);
 
-            if (tabId === 'battle') {
-                stopNonBattleBgm();
-            } else {
-                stopBattleBgm();
-            }
+            if (tabId !== 'battle') stopBattleBgm();
             document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(`screen-${tabId}`)?.classList.remove('hidden');
-
-            if (tabId !== 'battle') {
-                playNonBattleBgm();
-            }
 
             document.querySelectorAll('.nav-btn').forEach(b => {
                 b.classList.remove('text-amber-400', 'active-tab');
