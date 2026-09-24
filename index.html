@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" sizes="128x128" href="verdia_favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>アルカナ・コネクト - Arcana Connect</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -75,6 +76,8 @@
         .sprite-chronos    { background-image: url('ChatGPT Image 2026年9月21日 09_47_46 (1).png'); }
         .sprite-astral     { background-image: url('enemy9_astral_blue.png'); }
         .sprite-crimson    { background-image: url('enemy10_crimson_purple.png'); }
+        .sprite-verdia     { background-image: url('tower2_verdia.png'); }
+        .enemy-sprite.sprite-verdia { width:clamp(150px,38vw,230px); height:clamp(170px,44vw,270px); max-height:44vh; transform:scale(1.04); filter:drop-shadow(0 0 26px rgba(34,197,94,.8)) drop-shadow(0 18px 24px rgba(0,0,0,.95)); }
 
 
         .enemy-sprite.sprite-behemoth {
@@ -232,9 +235,19 @@
             50% { opacity: 1; transform: scale(1.03); }
         }
         .animate-tap-start { animation: tap-pulse 1.8s infinite ease-in-out; }
+        .crystal-icon { display:inline-block; width:.9em; height:1.15em; vertical-align:-.18em; position:relative; background:linear-gradient(145deg,#f5d0fe 0%,#c084fc 32%,#7e22ce 70%,#4c1d95 100%); clip-path:polygon(50% 0%,88% 25%,100% 68%,66% 100%,34% 100%,0% 68%,12% 25%); filter:drop-shadow(0 0 4px rgba(192,132,252,.55)); }
+        .crystal-icon::after { content:''; position:absolute; inset:8% 45% 8% 45%; background:rgba(255,255,255,.7); transform:skew(-12deg); }
+        .crystal-icon-lg { width:1.05em; height:1.3em; }
         .tower-reward-card { background: linear-gradient(135deg, rgba(15,23,42,.96), rgba(30,41,59,.88)); border:1px solid rgba(245,158,11,.28); box-shadow:0 10px 25px rgba(0,0,0,.22); }
         .tower-reward-card.earned { border-color:rgba(52,211,153,.45); background:linear-gradient(135deg,rgba(6,78,59,.42),rgba(15,23,42,.92)); }
         .tower-reward-card.next { border-color:rgba(250,204,21,.8); box-shadow:0 0 24px rgba(250,204,21,.16); }
+        .tower-reward-card .tower-reward-image-wrap { position:relative; z-index:1; height:58px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+        .tower-reward-card .tower-reward-image-wrap img { position:relative; z-index:1; width:58px; height:58px; object-fit:contain; pointer-events:none; }
+        .tower-reward-card .tower-reward-label, .tower-reward-card .tower-reward-detail, .tower-reward-card .tower-reward-status { position:relative; z-index:3; }
+        .tower-mode-badge { display:inline-flex; align-items:center; justify-content:center; min-width:76px; padding:3px 10px; border-radius:999px; font-size:10px; font-weight:900; letter-spacing:.08em; border:1px solid rgba(245,158,11,.45); background:rgba(120,53,15,.65); color:#fde68a; }
+        .tower-mode-badge.tower2 { border-color:rgba(168,85,247,.65); background:rgba(76,29,149,.65); color:#e9d5ff; }
+        .tower-reward-card.tower2 { border-color:rgba(168,85,247,.3); }
+        .tower-reward-card.tower2.next { border-color:rgba(196,181,253,.9); box-shadow:0 0 24px rgba(168,85,247,.2); }
         .ssr-ticket-thumb { width:64px; height:42px; object-fit:contain; filter:drop-shadow(0 0 10px rgba(250,204,21,.55)); }
     </style>
 </head>
@@ -248,7 +261,10 @@
                 <div class="bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-400 text-slate-950 font-black rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs shadow">
                     Lv.<span id="player-level">1</span>
                 </div>
-                <div class="font-black text-slate-100 text-xs sm:text-sm tracking-wide truncate max-w-[110px] sm:max-w-none" id="player-name">召喚士</div>
+                <div class="min-w-0 flex items-center gap-1.5 truncate">
+                    <div class="font-black text-slate-100 text-xs sm:text-sm tracking-wide truncate max-w-[110px] sm:max-w-none" id="player-name">召喚士</div>
+                    <span id="player-title" class="hidden shrink-0 text-[9px] sm:text-[10px] font-black text-purple-300 bg-purple-950/70 border border-purple-500/40 rounded-full px-1.5 py-0.5"></span>
+                </div>
             </div>
 
             <div class="hidden md:block font-cinzel text-amber-400 font-extrabold text-base tracking-widest text-gold">
@@ -256,8 +272,8 @@
             </div>
 
             <div class="flex items-center space-x-1 sm:space-x-3">
-                <button onclick="toggleAudio()" id="btn-audio" class="bg-slate-800 border border-slate-700 hover:border-amber-400 rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-slate-300 transition">
-                    <i id="icon-audio" class="fa-solid fa-volume-high text-[10px] sm:text-xs"></i>
+                <button onclick="openSettingsModal()" class="bg-slate-800 border border-slate-700 hover:border-amber-400 rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-slate-300 transition" title="設定">
+                    <i class="fa-solid fa-gear text-[11px] sm:text-xs"></i>
                 </button>
                 <div class="bg-slate-800/90 border border-slate-700 rounded-full pl-2 sm:pl-3 pr-1 py-0.5 sm:py-1 flex items-center space-x-1 sm:space-x-2 shadow-inner text-[11px] sm:text-xs">
                     <i class="fa-solid fa-bolt text-amber-400 text-[10px] sm:text-xs"></i>
@@ -271,7 +287,7 @@
                     <span id="player-gems" class="font-bold text-cyan-300">3,000</span>
                 </div>
                 <div class="bg-slate-800/90 border border-purple-500/40 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 flex items-center space-x-1 sm:space-x-2 shadow-inner text-[11px] sm:text-xs">
-                    <i class="fa-solid fa-crystal-ball text-purple-400 text-[10px] sm:text-xs"></i>
+                    <span class="crystal-icon crystal-icon-lg" aria-hidden="true"></span>
                     <span id="player-crystals" class="font-bold text-purple-300">0</span>
                 </div>
             </div>
@@ -555,13 +571,22 @@
             <section id="screen-tower" class="view-screen absolute inset-0 hidden p-3 md:p-5 bg-slate-950 overflow-y-auto">
                 <div class="max-w-3xl mx-auto text-center space-y-3 md:space-y-4">
                     <div>
-                        <h2 class="text-xl md:text-2xl font-black text-amber-400 font-cinzel tracking-wider">TOWER OF TRIALS</h2>
-                        <p class="text-[10px] md:text-xs text-slate-400">全50階層のエンドコンテンツ。48階以上の最深部では虚無竜クロノスが君臨！</p>
+                        <div class="flex items-center justify-center gap-2 mb-1">
+                            <h2 id="tower-name-display" class="text-xl md:text-2xl font-black text-amber-400 font-cinzel tracking-wider">試練のバベルタワー</h2>
+                            <span id="tower-mode-badge" class="tower-mode-badge">第1塔</span>
+                        </div>
+                        <p id="tower-description" class="text-[10px] md:text-xs text-slate-400">全50階層のエンドコンテンツ。最深部では虚無竜クロノスが君臨！</p>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-2 mb-2 md:mb-3">
+                        <button id="tower-switch-1" onclick="switchTower(1)" class="px-4 py-2 rounded-xl text-xs font-black bg-amber-500 text-slate-950 shadow-lg">第1塔</button>
+                        <button id="tower-switch-2" onclick="switchTower(2)" class="px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-400 border border-slate-700">第2塔</button>
                     </div>
 
                     <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-4 md:p-6 shadow-2xl relative overflow-hidden">
                         <div class="text-[10px] md:text-xs text-amber-400 font-extrabold mb-1">現在の到達階層</div>
                         <div class="text-3xl md:text-5xl font-black text-white font-cinzel mb-3 md:mb-4">階層 <span id="tower-floor-display" class="text-gold">1</span> / 50</div>
+                        <div id="tower-unlock-status" class="hidden text-[10px] md:text-xs text-purple-300 font-black mb-3"></div>
                         
                         <div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 md:p-3 text-xs text-slate-300 max-w-md mx-auto mb-4 md:mb-6">
                             <div class="text-amber-300 font-bold mb-1 text-[11px] md:text-xs">第 <span id="tower-target-floor">1</span> 階層 守護者</div>
@@ -575,10 +600,8 @@
                                     <div class="text-[10px] text-amber-400 font-black tracking-widest">TOWER MILESTONE REWARDS</div>
                                     <div class="text-sm md:text-base font-black text-white">10F / 20F / 30F / 40F / 50F 限定報酬</div>
                                 </div>
-                                <div class="text-[10px] text-slate-400">SSRチケット <span id="tower-ticket-count" class="text-amber-300 font-black">0</span>枚</div>
                             </div>
                             <div id="tower-reward-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2"></div>
-                            <div id="tower-title-display" class="hidden mt-2 text-center text-[10px] text-purple-300 font-bold"></div>
                         </div>
                         <button onclick="startTowerChallenge()" class="gold-gradient gold-gradient-hover text-slate-950 font-black px-8 md:px-12 py-2.5 md:py-3 rounded-xl text-xs md:text-sm shadow-xl transform active:scale-95 transition">
                             タワーに挑戦する
@@ -640,7 +663,7 @@
                     <div id="subview-enhance" class="hidden space-y-3">
                         <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
                             <span>ユニットの強化・限界突破・スキル強化</span>
-                            <span class="text-purple-300 font-bold">所持クリスタル: <i class="fa-solid fa-crystal-ball text-xs"></i> <span id="enhance-crystal-count">0</span></span>
+                            <span class="text-purple-300 font-bold">所持クリスタル: <span class="crystal-icon" aria-hidden="true"></span> <span id="enhance-crystal-count">0</span></span>
                         </div>
                         <div id="enhance-unit-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                     </div>
@@ -705,6 +728,9 @@
                     <div id="battle-skill-buttons" class="w-full md:flex-1 grid grid-cols-3 gap-1.5 md:gap-2"></div>
 
                     <div class="w-full md:w-auto flex md:flex-col justify-between space-x-1.5 md:space-x-0 md:space-y-1.5 shrink-0">
+                        <button onclick="openSettingsModal()" class="px-2 md:px-3 py-1 md:py-1.5 flex-1 md:flex-none bg-slate-800 border border-slate-700 rounded-xl text-[10px] md:text-xs text-cyan-300 font-extrabold hover:bg-slate-700 active:scale-95 transition text-center">
+                            <i class="fa-solid fa-gear mr-1"></i>設定
+                        </button>
                         <button onclick="toggleSpeed()" id="btn-speed" class="px-2 md:px-3 py-1 md:py-1.5 flex-1 md:flex-none bg-slate-800 border border-slate-700 rounded-xl text-[10px] md:text-xs text-amber-300 font-extrabold hover:bg-slate-700 active:scale-95 transition text-center">
                             速度: <span id="speed-status">1x</span>
                         </button>
@@ -816,6 +842,37 @@
             </div>
         </div>
 
+        <!-- 設定モーダル -->
+        <div id="settings-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[70] hidden items-center justify-center p-4" onclick="closeSettingsModal(event)">
+            <div class="bg-slate-900 border-2 border-cyan-500/50 rounded-3xl p-5 md:p-6 max-w-md w-full shadow-2xl" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="text-[10px] text-cyan-300 font-black tracking-widest">SYSTEM SETTINGS</div>
+                        <h3 class="text-xl font-black text-white">設定</h3>
+                    </div>
+                    <button onclick="closeSettingsModal()" class="w-9 h-9 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
+                        <div class="flex justify-between items-center mb-3"><span class="font-black text-white">BGM音量</span><span id="bgm-volume-value" class="text-cyan-300 font-black text-sm">60%</span></div>
+                        <input id="bgm-volume-slider" type="range" min="0" max="100" value="60" oninput="setBgmVolume(this.value)" class="w-full accent-cyan-400">
+                    </div>
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
+                        <div class="flex justify-between items-center mb-3"><span class="font-black text-white">効果音音量</span><span id="se-volume-value" class="text-amber-300 font-black text-sm">70%</span></div>
+                        <input id="se-volume-slider" type="range" min="0" max="100" value="70" oninput="setSeVolume(this.value)" class="w-full accent-amber-400">
+                    </div>
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
+                        <div class="text-[10px] text-purple-300 font-black tracking-widest mb-2">TITLE</div>
+                        <div class="font-black text-white mb-2">称号</div>
+                        <select id="title-select" onchange="setEquippedTitle(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-purple-400">
+                            <option value="">称号を外す</option>
+                        </select>
+                        <div id="title-empty-message" class="hidden text-[10px] text-slate-500 mt-2">獲得した称号はまだありません。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Custom Notification Modal -->
         <div id="custom-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
             <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-5 md:p-6 max-w-sm w-full text-center shadow-2xl">
@@ -833,22 +890,101 @@
 
     <script src="friends-config.js"></script>
     <script>
-        let audioEnabled = true;
+        // オーディオ設定（BGMと効果音を個別管理）
         let audioCtx = null;
+        let bgmVolume = 0.6;
+        let seVolume = 0.7;
+        const battleBgm = new Audio('Steel_Against_the_Tide.mp3');
+        battleBgm.loop = true;
+        battleBgm.preload = 'auto';
 
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
-        function toggleAudio() {
-            audioEnabled = !audioEnabled;
-            const btnIcon = document.getElementById('btn-audio')?.querySelector('i');
-            if (btnIcon) btnIcon.className = audioEnabled ? 'fa-solid fa-volume-high text-[10px] sm:text-xs' : 'fa-solid fa-volume-xmark text-[10px] sm:text-xs text-rose-500';
+        function applyAudioSettings() {
+            battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
+            const b = document.getElementById('bgm-volume-slider');
+            const s = document.getElementById('se-volume-slider');
+            const bv = document.getElementById('bgm-volume-value');
+            const sv = document.getElementById('se-volume-value');
+            if (b) b.value = Math.round(bgmVolume * 100);
+            if (s) s.value = Math.round(seVolume * 100);
+            if (bv) bv.innerText = Math.round(bgmVolume * 100) + '%';
+            if (sv) sv.innerText = Math.round(seVolume * 100) + '%';
+        }
+
+        function setBgmVolume(value) {
+            bgmVolume = Number(value) / 100;
+            playerData.bgmVolume = bgmVolume;
+            battleBgm.volume = bgmVolume;
+            const el = document.getElementById('bgm-volume-value');
+            if (el) el.innerText = Math.round(bgmVolume * 100) + '%';
+            saveData();
+        }
+
+        function setSeVolume(value) {
+            seVolume = Number(value) / 100;
+            playerData.seVolume = seVolume;
+            const el = document.getElementById('se-volume-value');
+            if (el) el.innerText = Math.round(seVolume * 100) + '%';
+            saveData();
+        }
+
+        function playBattleBgm() {
+            applyAudioSettings();
+            battleBgm.currentTime = 0;
+            battleBgm.play().catch(() => {});
+        }
+
+        function stopBattleBgm() {
+            battleBgm.pause();
+            battleBgm.currentTime = 0;
+        }
+
+        function getOwnedTitles() {
+            const titles = [];
+            if (playerData.towerTitle) titles.push(playerData.towerTitle);
+            if (Array.isArray(playerData.titles)) {
+                playerData.titles.forEach(t => { if (t && !titles.includes(t)) titles.push(t); });
+            }
+            return titles;
+        }
+
+        function renderTitleSettings() {
+            const select = document.getElementById('title-select');
+            const empty = document.getElementById('title-empty-message');
+            if (!select) return;
+            const titles = getOwnedTitles();
+            select.innerHTML = '<option value="">称号を外す</option>' + titles.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+            select.value = playerData.equippedTitle || '';
+            if (empty) empty.classList.toggle('hidden', titles.length > 0);
+        }
+
+        function setEquippedTitle(title) {
+            playerData.equippedTitle = title || '';
+            updateHeaderUI();
+            saveData();
+        }
+
+        function openSettingsModal() {
+            renderTitleSettings();
+            applyAudioSettings();
+            const modal = document.getElementById('settings-modal');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+
+        function closeSettingsModal(event) {
+            if (event && event.target !== document.getElementById('settings-modal')) return;
+            const modal = document.getElementById('settings-modal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+            saveData();
         }
 
         // Web Audio API による拡張SE表現
         function playSE(type) {
-            if (!audioEnabled) return;
+            if (seVolume <= 0) return;
             initAudio();
             if (!audioCtx) return;
 
@@ -861,7 +997,7 @@
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(180, now);
                 osc.frequency.exponentialRampToValueAtTime(30, now + 0.12);
-                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.setValueAtTime(0.3 * seVolume, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
                 osc.start(now); osc.stop(now + 0.12);
             } else if (type === 'crit') {
@@ -871,7 +1007,7 @@
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(400, now);
                 osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
-                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.setValueAtTime(0.5 * seVolume, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
                 osc.start(now); osc.stop(now + 0.25);
             } else if (type === 'skill') {
@@ -881,7 +1017,7 @@
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(250, now);
                 osc.frequency.exponentialRampToValueAtTime(900, now + 0.3);
-                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.setValueAtTime(0.4 * seVolume, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
                 osc.start(now); osc.stop(now + 0.35);
             } else if (type === 'heal') {
@@ -891,7 +1027,7 @@
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(440, now);
                 osc.frequency.linearRampToValueAtTime(880, now + 0.3);
-                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.setValueAtTime(0.3 * seVolume, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
                 osc.start(now); osc.stop(now + 0.35);
             }
@@ -926,7 +1062,8 @@
             'chronos': { name: '虚無竜クロノス', element: 'dark', spriteClass: 'sprite-chronos' },
             'behemoth': { name: '終焉巨神ベヒモス', element: 'fire', spriteClass: 'sprite-behemoth' },
             'astral': { name: '星蝕の蒼晶竜', element: 'water', spriteClass: 'sprite-astral' },
-            'crimson': { name: '紅蓮終焉の魔竜', element: 'fire', spriteClass: 'sprite-crimson' }
+            'crimson': { name: '紅蓮終焉の魔竜', element: 'fire', spriteClass: 'sprite-crimson' },
+            'verdia': { name: '翠緑の魔姫ヴェルディア', element: 'wind', spriteClass: 'sprite-verdia' }
         };
 
         // スキル性能の個別化 (target: single/all/heal/buff, power, statusEffect)
@@ -952,13 +1089,13 @@
             'lumina': { 
                 id: 'lumina', name: '天光の聖女ルミナ', rarity: 'SR', element: 'light', 
                 image: 'Gemini_Generated_Image_ccovrhccovrhccov.png', baseHp: 720, baseAtk: 150, 
-                skillName: 'ホーリー・サンクチュアリ', skillType: 'heal', skillPower: 0.5,
+                skillName: 'ホーリー・サンクチュアリ', skillType: 'cleanse', skillPower: 0.5,
                 statusEffect: null, dialogue: '「光の導きがあらんことを。」' 
             },
             'veronica': { 
                 id: 'veronica', name: '紫電の武神ヴェロニカ', rarity: 'SR', element: 'fire', 
                 image: 'Gemini_Generated_Image_bdl520bdl520bdl5.png', baseHp: 750, baseAtk: 165, 
-                skillName: '紫電雷光閃', skillType: 'single', skillPower: 2.5,
+                skillName: '紫電雷光閃', skillType: 'stun', skillPower: 2.5,
                 statusEffect: 'stun', dialogue: '「我が槍の閃光、見切れるか！」' 
             },
             'mylene': { 
@@ -971,21 +1108,57 @@
             'astrea': {
                 id: 'astrea', name: '聖輝の女神アストレア', rarity: 'SSR', element: 'light',
                 image: 'astrea.png', baseHp: 1020, baseAtk: 215,
-                skillName: 'アストラル・ブレス', skillType: 'heal', skillPower: 0.65,
+                skillName: 'アストラル・ブレス', skillType: 'buff', skillPower: 0.65,
                 statusEffect: 'atk_up', dialogue: '「星々の輝きよ、皆を導いて。私が最後まで守ります。」'
             },
             'selene': {
                 id: 'selene', name: '黒月の剣聖セレネ', rarity: 'SSR', element: 'dark',
                 image: 'selene.png', baseHp: 980, baseAtk: 235,
-                skillName: 'ムーン・リーパー', skillType: 'all', skillPower: 2.4,
+                skillName: 'ムーン・リーパー', skillType: 'drain', skillPower: 2.4,
                 statusEffect: 'def_down', dialogue: '「黒月が満ちる夜、すべてを静かに斬り伏せる。」'
             }
             ,
             'luciferia': {
                 id: 'luciferia', name: '魔王・深淵のルシフェリア', rarity: 'SSR', element: 'dark',
                 image: 'ChatGPT Image 2026年9月21日 09_19_42.png', baseHp: 1120, baseAtk: 255,
-                skillName: 'アビス・エンド', skillType: 'all', skillPower: 2.7,
+                skillName: 'アビス・エンド', skillType: 'execute', skillPower: 2.7,
                 statusEffect: 'def_down', dialogue: '「この深淵を越えた者だけが、私を従える資格を持つ。」'
+            },
+            'verdia': {
+                id: 'verdia', name: '翠緑の魔姫ヴェルディア', rarity: 'SSR', element: 'wind',
+                image: 'tower2_verdia.png', baseHp: 1240, baseAtk: 270,
+                skillName: 'エメラルド・アビス', skillType: 'shield', skillPower: 2.85,
+                statusEffect: 'def_down', dialogue: '「深緑の檻へようこそ。ここから先は、私を越えてみせて。」'
+            },
+            'kaede': {
+                id: 'kaede', name: '紅葉の軍師カエデ', rarity: 'SR', element: 'fire',
+                image: 'Gemini_Generated_Image_88wbnf88wbnf88wb.png', baseHp: 700, baseAtk: 145,
+                skillName: '戦陣・紅蓮鼓舞', skillType: 'buff', skillPower: 0.8,
+                statusEffect: 'atk_up', dialogue: '「全軍、ここから一気に押し切るよ！」'
+            },
+            'noctis': {
+                id: 'noctis', name: '夜影の暗殺者ノクティス', rarity: 'SR', element: 'dark',
+                image: 'Gemini_Generated_Image_bdl520bdl520bdl5.png', baseHp: 680, baseAtk: 180,
+                skillName: 'シャドウ・ドレイン', skillType: 'drain', skillPower: 2.15,
+                statusEffect: null, dialogue: '「影は音もなく、獲物の生命を奪う。」'
+            },
+            'celestia': {
+                id: 'celestia', name: '星護の騎士セレスティア', rarity: 'SSR', element: 'light',
+                image: 'Gemini_Generated_Image_ccovrhccovrhccov.png', baseHp: 1080, baseAtk: 190,
+                skillName: 'ルミナス・バリア', skillType: 'shield', skillPower: 0.7,
+                statusEffect: 'shield', dialogue: '「この光壁がある限り、誰も倒れさせません。」'
+            },
+            'riona': {
+                id: 'riona', name: '白花の聖奏リオナ', rarity: 'SR', element: 'water',
+                image: 'ChatGPT Image 2026年9月21日 08_54_21.png', baseHp: 760, baseAtk: 140,
+                skillName: 'ピュア・リカバリー', skillType: 'cleanse', skillPower: 0.55,
+                statusEffect: 'cleanse', dialogue: '「傷も迷いも、全部ここで癒します。」'
+            },
+            'zekra': {
+                id: 'zekra', name: '終刻の魔剣士ゼクラ', rarity: 'SSR', element: 'dark',
+                image: 'ChatGPT Image 2026年9月21日 09_19_42.png', baseHp: 1010, baseAtk: 245,
+                skillName: 'デッドエンド・エッジ', skillType: 'execute', skillPower: 2.45,
+                statusEffect: 'def_down', dialogue: '「終わりの刻だ。逃げ道はない。」'
             }
         };
 
@@ -1050,7 +1223,15 @@
             level: 1, exp: 0, gems: 3000, ap: 50, maxAp: 50, crystals: 50,
             ssrTickets: 0,
             towerTitle: '',
+            titles: [],
+            equippedTitle: '',
+            bgmVolume: 0.6,
+            seVolume: 0.7,
             towerFloor: 1,
+            towerCycle: 1,
+            tower2Unlocked: false,
+            tower2ClearedFloors: [],
+            tower2Completed: false,
             clearedQuests: [],
             clearedTowerFloors: [],
             party: ['iris', null, null],
@@ -1163,8 +1344,29 @@
             if (!Array.isArray(playerData.friends)) playerData.friends = [];
             if (!Array.isArray(playerData.clearedQuests)) playerData.clearedQuests = [];
             if (!Array.isArray(playerData.clearedTowerFloors)) playerData.clearedTowerFloors = [];
+            if (!Array.isArray(playerData.tower2ClearedFloors)) playerData.tower2ClearedFloors = [];
+            if (!Number.isFinite(Number(playerData.towerCycle)) || Number(playerData.towerCycle) < 1) playerData.towerCycle = 1;
+            playerData.towerCycle = Math.min(2, Math.floor(Number(playerData.towerCycle)));
+            playerData.tower2Completed = !!playerData.tower2Completed;
+            // 第1塔50Fをすでにクリア済みの既存セーブは、第2塔1Fへ移行。
+            // towerFloor が1や50のまま保存されている旧セーブもあるため、
+            // 「51Fまで進んでいるか」ではなく「50Fクリア済みか」で判定する。
+            // 第1塔50Fクリア済みなら第2塔を解放。現在選択中の塔は維持する。
+            if (playerData.clearedTowerFloors.includes(50)) {
+                playerData.tower2Unlocked = true;
+            }
+            if (typeof playerData.tower2Unlocked !== 'boolean') playerData.tower2Unlocked = !!playerData.clearedTowerFloors.includes(50) || playerData.tower2Completed;
+            if (Number(playerData.towerFloor) > 50) playerData.towerFloor = 50;
             if (!Number.isFinite(Number(playerData.ssrTickets)) || Number(playerData.ssrTickets) < 0) playerData.ssrTickets = 0;
             if (typeof playerData.towerTitle !== 'string') playerData.towerTitle = '';
+            if (!Array.isArray(playerData.titles)) playerData.titles = [];
+            if (playerData.towerTitle && !playerData.titles.includes(playerData.towerTitle)) playerData.titles.push(playerData.towerTitle);
+            if (typeof playerData.equippedTitle !== 'string') playerData.equippedTitle = '';
+            if (playerData.bgmVolume == null) playerData.bgmVolume = 0.6;
+            if (playerData.seVolume == null) playerData.seVolume = 0.7;
+            if (!getOwnedTitles().includes(playerData.equippedTitle)) playerData.equippedTitle = '';
+            bgmVolume = Number.isFinite(Number(playerData.bgmVolume)) ? Math.max(0, Math.min(1, Number(playerData.bgmVolume))) : 0.6;
+            seVolume = Number.isFinite(Number(playerData.seVolume)) ? Math.max(0, Math.min(1, Number(playerData.seVolume))) : 0.7;
             if (!Number.isFinite(Number(playerData.towerFloor)) || Number(playerData.towerFloor) < 1) playerData.towerFloor = 1;
             if (!Array.isArray(playerData.mailbox)) playerData.mailbox = [];
             if (!Number.isFinite(Number(playerData.mailboxMigrationVersion))) playerData.mailboxMigrationVersion = 0;
@@ -1177,9 +1379,12 @@
             // 旧セーブにはレイドボスHPがないため、最大値から開始する
             raidBossHp = Math.max(0, Math.min(RAID_BOSS_MAX_HP, Number(playerData.raidBossHp ?? RAID_BOSS_MAX_HP)));
             playerData.raidBossHp = raidBossHp;
+            applyAudioSettings();
+            updateHeaderUI();
         }
 
         function switchTab(tabId) {
+            if (tabId !== 'battle') stopBattleBgm();
             document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(`screen-${tabId}`)?.classList.remove('hidden');
 
@@ -1566,6 +1771,11 @@
 
         function updateHeaderUI() {
             document.getElementById('player-name').innerText = playerData.name || '召喚士';
+            const titleEl = document.getElementById('player-title');
+            if (titleEl) {
+                titleEl.innerText = playerData.equippedTitle ? `【${playerData.equippedTitle}】` : '';
+                titleEl.classList.toggle('hidden', !playerData.equippedTitle);
+            }
             document.getElementById('player-level').innerText = playerData.level;
             document.getElementById('player-ap').innerText = playerData.ap;
             document.getElementById('player-max-ap').innerText = playerData.maxAp;
@@ -1894,11 +2104,8 @@
                 const inParty = playerData.party.includes(unitId);
                 const card = document.createElement('div');
                 card.className = `bg-slate-900 border rounded-2xl p-2 flex flex-col items-center cursor-pointer ${inParty ? 'opacity-40 border-slate-800' : 'border-amber-500/40'}`;
-                card.onclick = () => {
-                    if (inParty) openSkillInfo(unitId);
-                    else addToParty(unitId);
-                };
-                card.innerHTML = `<img src="${unit.image}" class="h-12 md:h-16 object-contain"><span class="text-[9px] font-bold text-slate-200 truncate w-full text-center">${unit.name}</span><span class="text-[8px] text-amber-300 truncate w-full text-center mt-0.5">${unit.skillName}</span>`;
+                card.onclick = () => openSkillInfo(unitId);
+                card.innerHTML = `<img src="${unit.image}" class="h-12 md:h-16 object-contain"><span class="text-[9px] font-bold text-slate-200 truncate w-full text-center">${unit.name}</span><span class="text-[8px] text-amber-300 truncate w-full text-center mt-0.5"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>${unit.skillName}</span><button onclick="event.stopPropagation(); ${inParty ? `removeFromParty(${playerData.party.indexOf(unitId)})` : `addToParty('${unitId}')`}" class="mt-1 px-2 py-1 rounded-lg text-[8px] font-black ${inParty ? 'bg-emerald-700/40 text-emerald-300 border border-emerald-500/30' : 'bg-amber-600/20 text-amber-300 border border-amber-500/30'}">${inParty ? '編成中' : '編成する'}</button>`;
                 rosterGrid.appendChild(card);
             });
         }
@@ -1909,19 +2116,24 @@
             if (!unit) return null;
             const skillLevel = inv.skillLevel || 1;
             const power = unit.skillPower * (1 + (skillLevel - 1) * 0.15);
-            const typeText = { single: '単体攻撃', all: '全体攻撃', heal: '味方全体回復' }[unit.skillType] || '特殊効果';
+            const typeText = {
+                single: '単体攻撃', all: '全体攻撃', heal: '味方全体回復', buff: '味方強化',
+                shield: 'ダメージ軽減', drain: '吸収攻撃', execute: '処刑攻撃', cleanse: '浄化回復', stun: 'スタン攻撃'
+            }[unit.skillType] || '特殊効果';
             let effect = '';
-            if (unit.skillType === 'heal') {
-                effect = `味方全体のHPを攻撃力の ${Math.round(power * 100)}% 回復。`;
-                if (unit.statusEffect === 'atk_up') effect += '\nさらに自身の攻撃力が30%上昇し、その後の通常攻撃が強化されます。';
-            } else if (unit.skillType === 'all') {
-                effect = `敵全体に攻撃力の ${Math.round(power * 100)}% のダメージ。`;
-                if (unit.statusEffect === 'poison') effect += '\nさらに毒を付与し、敵ターン開始時に最大HPの8%のダメージを与えます。';
-                if (unit.statusEffect === 'def_down') effect += '\nさらに防御力低下を付与し、通常攻撃から受けるダメージが25%増加します。';
-            } else {
-                effect = `敵単体に攻撃力の ${Math.round(power * 100)}% のダメージ。`;
-                if (unit.statusEffect === 'stun') effect += '\nさらにスタンを付与し、対象の次の行動を1回スキップさせます。';
+            switch (unit.skillType) {
+                case 'heal': effect = `味方全体のHPを攻撃力の ${Math.round(power * 100)}% 回復。`; break;
+                case 'cleanse': effect = `味方全体のHPを攻撃力の ${Math.round(power * 100)}% 回復し、スタンなどの不利な状態を解除。`; break;
+                case 'buff': effect = `味方全体の攻撃力が30%上昇。さらに${Math.round(power * 100)}%相当の回復効果を受けます。`; break;
+                case 'shield': effect = `味方全体にシールドを付与し、次の3回の被ダメージを30%軽減。`; break;
+                case 'drain': effect = `敵単体に攻撃力の ${Math.round(power * 100)}% のダメージを与え、与えたダメージの50%を自身が回復。`; break;
+                case 'execute': effect = `敵単体に攻撃力の ${Math.round(power * 100)}% のダメージ。対象HPが50%以下ならダメージがさらに80%増加。`; break;
+                case 'stun': effect = `敵単体に攻撃力の ${Math.round(power * 100)}% のダメージを与え、スタンを付与。`; break;
+                case 'all': effect = `敵全体に攻撃力の ${Math.round(power * 100)}% のダメージ。`; break;
+                default: effect = `敵単体に攻撃力の ${Math.round(power * 100)}% のダメージ。`; break;
             }
+            if (unit.statusEffect === 'def_down') effect += '\nさらに防御力低下を付与。';
+            if (unit.statusEffect === 'atk_up' && unit.skillType !== 'buff') effect += '\nさらに自身の攻撃力が30%上昇。';
             return { unit, inv, skillLevel, power, typeText, effect };
         }
 
@@ -1955,6 +2167,16 @@
         }
         function removeFromParty(index) { playerData.party[index] = null; renderPartyUI(); }
 
+        function isUnitInParty(unitId) {
+            return Array.isArray(playerData.party) && playerData.party.includes(unitId);
+        }
+
+        function partyStatusBadge(unitId) {
+            return isUnitInParty(unitId)
+                ? '<span class="text-[8px] md:text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-600/90 text-white border border-emerald-400/40">編成中</span>'
+                : '';
+        }
+
         function renderEnhanceUI() {
             const list = document.getElementById('enhance-unit-list');
             list.innerHTML = '';
@@ -1976,7 +2198,7 @@
                 card.innerHTML = `
                     <img src="${unit.image}" class="h-16 w-12 md:h-20 md:w-16 object-contain">
                     <div class="flex-1 overflow-hidden">
-                        <div class="text-[11px] md:text-xs font-black text-white truncate">${unit.name}</div>
+                        <div class="text-[11px] md:text-xs font-black text-white truncate flex items-center gap-1.5">${unit.name}${partyStatusBadge(unitId)}</div>
                         <div class="text-[9px] md:text-[10px] text-amber-300 font-bold mt-0.5">Lv. ${inv.level} / ${maxLevel} | 覚醒: ★${inv.awaken} | スキルLv.${inv.skillLevel}</div>
                         <div class="text-[9px] md:text-[10px] text-slate-400 mt-0.5">HP: ${unit.baseHp + (inv.level * 25) + (inv.awaken * 150)} | ATK: ${unit.baseAtk + (inv.level * 8) + (inv.awaken * 50)}</div>
                     </div>
@@ -2067,7 +2289,7 @@
                 const btn = document.createElement('button');
                 btn.className = `w-full text-left p-2 rounded-xl border text-xs font-bold flex justify-between items-center ${selectedRelicUnit === id ? 'bg-amber-500/20 border-amber-400 text-amber-300' : 'bg-slate-950 border-slate-800 text-slate-300'}`;
                 btn.onclick = () => { selectedRelicUnit = id; renderRelicUI(); };
-                btn.innerHTML = `<span>${u.name}</span><span class="text-[10px] ${equippedRelic ? 'text-amber-400' : 'text-slate-500'}">${equippedRelic ? equippedRelic.name : '未装備'}</span>`;
+                btn.innerHTML = `<span class="flex items-center gap-1.5 min-w-0"><span class="truncate">${u.name}</span>${partyStatusBadge(id)}</span><span class="text-[10px] ${equippedRelic ? 'text-amber-400' : 'text-slate-500'} shrink-0">${equippedRelic ? equippedRelic.name : '未装備'}</span>`;
                 uContainer.appendChild(btn);
             });
 
@@ -2205,31 +2427,140 @@
             startBattle(quest, activeParty);
         }
 
-        const TOWER_MILESTONE_REWARDS = {
+        const TOWER_MILESTONE_REWARDS_1 = {
             10:{kind:'gems',label:'ジュエル',detail:'1,000ジュエル',icon:'fa-gem'},
             20:{kind:'ticket',label:'SSR確定チケット',detail:'SSR確定ガチャチケット ×1',image:'ssr_ticket.png'},
             30:{kind:'relic',masterId:'rel_tower_crown',label:'限定装備',detail:'天穹の王冠',icon:'fa-crown'},
-            40:{kind:'unit',label:'限定キャラ',detail:'魔王・深淵のルシフェリア',image:MASTER_UNITS.luciferia.image},
-            50:{kind:'title',label:'限定称号',detail:'「バベルの踏破者」',icon:'fa-trophy'}
+            40:{kind:'unit',unitId:'luciferia',label:'限定キャラ',detail:'魔王・深淵のルシフェリア',image:MASTER_UNITS.luciferia.image},
+            50:{kind:'title',label:'限定称号',detail:'「バベルの踏破者」',icon:'fa-trophy',name:'バベルの踏破者'}
         };
-        function getTowerMilestoneReward(floor){return TOWER_MILESTONE_REWARDS[Number(floor)]||null;}
+
+        // 第2塔「冥界のネメシスタワー」は第1塔より報酬を少し豪華にする。
+        const TOWER_MILESTONE_REWARDS_2 = {
+            10:{kind:'gems',label:'ジュエル',detail:'1,500ジュエル',icon:'fa-gem',rewards:[{kind:'gems',amount:1500}]},
+            20:{kind:'ticket',label:'SSR確定チケット＋クリスタル',detail:'SSR確定ガチャチケット ×1 ＋ 100クリスタル',image:'ssr_ticket.png',rewards:[{kind:'ssrTicket',amount:1},{kind:'crystals',amount:100}]},
+            30:{kind:'gems',label:'深層報酬',detail:'1,500ジュエル ＋ 100クリスタル',icon:'fa-gem',rewards:[{kind:'gems',amount:1500},{kind:'crystals',amount:100}]},
+            40:{kind:'unit',unitId:'verdia',label:'限定キャラ',detail:'翠緑の魔姫ヴェルディア',image:'tower2_verdia.png',rewards:[{kind:'unit',unitId:'verdia',name:'翠緑の魔姫ヴェルディア',amount:1}]},
+            50:{kind:'title',label:'限定称号＋ジュエル',detail:'「冥界踏破者」 ＋ 2,000ジュエル',icon:'fa-trophy',name:'冥界踏破者',rewards:[{kind:'title',name:'冥界踏破者',amount:1},{kind:'gems',amount:2000}]}
+        };
+
+        function getTowerCycle(){ return Number(playerData.towerCycle) === 2 ? 2 : 1; }
+        function getCurrentTowerRewards(){ return getTowerCycle() === 2 ? TOWER_MILESTONE_REWARDS_2 : TOWER_MILESTONE_REWARDS_1; }
+        function getTowerClearedFloors(){ return getTowerCycle() === 2 ? playerData.tower2ClearedFloors : playerData.clearedTowerFloors; }
+        function getTowerMilestoneReward(floor, cycle=getTowerCycle()){
+            const table = cycle === 2 ? TOWER_MILESTONE_REWARDS_2 : TOWER_MILESTONE_REWARDS_1;
+            return table[Number(floor)] || null;
+        }
+        function getTowerRewardPayload(reward){
+            if (!reward) return [];
+            if (Array.isArray(reward.rewards)) return reward.rewards.map(r => ({...r}));
+            if (reward.kind === 'gems') return [{kind:'gems',amount:1000}];
+            if (reward.kind === 'ticket') return [{kind:'ssrTicket',amount:1}];
+            if (reward.kind === 'relic') return [{kind:'relic',masterId:reward.masterId || 'rel_tower_crown',name:reward.detail,amount:1}];
+            if (reward.kind === 'unit') return [{kind:'unit',unitId:reward.unitId,name:reward.detail,amount:1}];
+            if (reward.kind === 'title') return [{kind:'title',name:reward.name || reward.detail.replace(/[「」]/g,''),amount:1}];
+            return [];
+        }
         function renderTowerRewardCard(floor,reward){
-            const cleared=playerData.clearedTowerFloors.includes(Number(floor)), next=Number(floor)===Number(playerData.towerFloor);
+            const cleared=getTowerClearedFloors().includes(Number(floor)), next=Number(floor)===Number(playerData.towerFloor);
             const relicMaster=reward.kind==='relic'?MASTER_RELICS.find(x=>x.masterId===(reward.masterId||'rel_tower_crown')):null;
             const rewardImage=reward.image||relicMaster?.img;
             const rewardIcon=reward.icon||relicMaster?.icon||'fa-shield-halved';
-            const icon=rewardImage?`<img src="${rewardImage}" alt="${reward.detail||reward.label}" class="w-14 h-14 md:w-16 md:h-16 object-contain mx-auto drop-shadow-[0_0_12px_rgba(245,158,11,0.65)]">`:`<div class="w-12 h-12 mx-auto rounded-xl bg-slate-950 border border-slate-700 flex items-center justify-center"><i class="fa-solid ${rewardIcon} text-xl text-amber-300"></i></div>`;
-            return `<div class="tower-reward-card ${cleared?'earned':''} ${next?'next':''} rounded-xl p-2 text-center relative overflow-hidden">${next?'<div class="absolute top-0 right-0 text-[8px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.5 rounded-bl-lg">NEXT</div>':''}<div class="text-[10px] font-black ${cleared?'text-emerald-300':'text-amber-300'}">${floor}F</div><div class="mt-1 h-12 flex items-center justify-center">${icon}</div><div class="text-[9px] md:text-[10px] text-white font-black mt-1 leading-tight">${reward.label}</div><div class="text-[8px] text-slate-400 mt-0.5 leading-tight">${reward.detail}</div><div class="text-[8px] font-black mt-1 ${cleared?'text-emerald-400':'text-slate-500'}">${cleared?'獲得済み':'未獲得'}</div></div>`;
+            const icon=rewardImage
+                ? `<div class="tower-reward-image-wrap"><img src="${rewardImage}" alt="${reward.detail||reward.label}"></div>`
+                : `<div class="tower-reward-image-wrap"><div class="w-12 h-12 rounded-xl bg-slate-950 border border-slate-700 flex items-center justify-center"><i class="fa-solid ${rewardIcon} text-xl text-amber-300"></i></div></div>`;
+            const extraClass = getTowerCycle() === 2 ? ' tower2' : '';
+            return `<div class="tower-reward-card${extraClass} ${cleared?'earned':''} ${next?'next':''} rounded-xl p-2 text-center relative overflow-hidden">
+                ${next?'<div class="absolute top-0 right-0 z-10 text-[8px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.5 rounded-bl-lg">NEXT</div>':''}
+                <div class="text-[10px] font-black ${cleared?'text-emerald-300':'text-amber-300'}">${floor}F</div>
+                ${icon}
+                <div class="tower-reward-label text-[9px] md:text-[10px] text-white font-black mt-1 leading-tight">${reward.label}</div>
+                <div class="tower-reward-detail text-[8px] text-slate-400 mt-0.5 leading-tight">${String(reward.detail||'').replace(/(\d[\d,]*)クリスタル/g, '<span class="inline-flex items-center gap-0.5"><span class="crystal-icon" aria-hidden="true"></span>$1クリスタル</span>')}</div>
+                <div class="tower-reward-status text-[8px] font-black mt-1 ${cleared?'text-emerald-400':'text-slate-500'}">${cleared?'獲得済み':'未獲得'}</div>
+            </div>`;
+        }
+        function getTowerEnemyInfo(floor, cycle=getTowerCycle()){
+            if (cycle === 2) {
+                if (floor === 50) return {type:'verdia',name:'翠緑の魔姫ヴェルディア・終焉形態',attr:'風'};
+                if (floor >= 41 && floor <= 44) return {type:'verdia',name:'翠緑の魔姫ヴェルディア',attr:'風'};
+                if (floor >= 45 && floor <= 47) return {type:'crimson',name:'紅蓮終焉の魔竜',attr:'火'};
+                if (floor >= 48) return {type:'chronos',name:'虚無竜クロノス',attr:'闇'};
+            }
+            if (floor >= 48) return {type:'chronos',name:'虚無竜クロノス',attr:'闇'};
+            if (floor >= 46) return {type:'crimson',name:'紅蓮終焉の魔竜',attr:'火'};
+            if (floor >= 45 || (floor % 10 === 5 && floor >= 25)) return {type:'bahamut',name:'滅世竜バハムート',attr:'火'};
+            if (floor >= 41) return {type:'astral',name:'星蝕の蒼晶竜',attr:'水'};
+            if (floor % 10 === 0 || floor >= 40) return {type:'luciferia',name:'魔王・深淵のルシフェリア',attr:'闇'};
+            return {type:'dragon',name:'階層守護竜',attr:'火'};
+        }
+        function getTowerClearRewardGems(floor, cycle=getTowerCycle()){
+            const base = cycle === 2 ? 500 + Number(floor) * 18 : 300 + Number(floor) * 10;
+            return Math.round(base / 50) * 50;
+        }
+        function getTowerClearRewardHtml(floor, cycle=getTowerCycle()){
+            return `<span class="inline-flex items-center gap-1"><i class="fa-solid fa-gem text-[10px]"></i> ${getTowerClearRewardGems(floor,cycle).toLocaleString()} ジュエル</span>`;
+        }
+        function getTowerRecommendedPower(floor, cycle=getTowerCycle()){
+            return cycle === 2 ? 2800 + floor * 300 : 1100 + floor * 220;
+        }
+        function getTowerNextFloor(cycle){
+            const cleared = cycle===2 ? (playerData.tower2ClearedFloors || []) : (playerData.clearedTowerFloors || []);
+            for(let f=1; f<=50; f++) if(!cleared.includes(f)) return f;
+            return 50;
+        }
+        function isTower2Unlocked(){
+            return (playerData.clearedTowerFloors || []).includes(50) || !!playerData.tower2Completed;
+        }
+        function switchTower(cycle){
+            cycle = Number(cycle)===2 ? 2 : 1;
+            if(cycle===2 && !isTower2Unlocked()){
+                showCustomModal('未解放','第1塔を50Fまでクリアすると第2塔が解放されます。');
+                return;
+            }
+            playerData.towerCycle = cycle;
+            playerData.towerFloor = Math.max(1, Math.min(50, getTowerNextFloor(cycle)));
+            saveData();
+            renderTowerUI();
         }
         function renderTowerUI(){
-            document.getElementById('tower-floor-display').innerText=playerData.towerFloor; document.getElementById('tower-target-floor').innerText=playerData.towerFloor;
-            const list=document.getElementById('tower-reward-list'); if(list) list.innerHTML=Object.entries(TOWER_MILESTONE_REWARDS).map(([f,r])=>renderTowerRewardCard(f,r)).join('');
-            const tc=document.getElementById('tower-ticket-count'); if(tc) tc.innerText=Number(playerData.ssrTickets||0);
-            const td=document.getElementById('tower-title-display'); if(td){if(playerData.towerTitle){td.innerText=`現在の限定称号：${playerData.towerTitle}`;td.classList.remove('hidden')}else td.classList.add('hidden')}
-            const floor=playerData.towerFloor, chronos=floor>=48, crimson=!chronos&&floor>=46&&floor<=47, bahamut=!chronos&&!crimson&&(floor>=45||(floor%10===5&&floor>=25)), astral=!chronos&&!crimson&&!bahamut&&floor>=41&&floor<=44, lucifer=!chronos&&!crimson&&!bahamut&&!astral&&(floor%10===0||floor>=40);
-            let enemyName='階層守護竜',attr='火/水/風'; if(chronos){enemyName='虚無竜クロノス';attr='闇'} else if(crimson){enemyName='紅蓮終焉の魔竜';attr='火'} else if(bahamut){enemyName='滅世竜バハムート';attr='火'} else if(astral){enemyName='星蝕の蒼晶竜';attr='水'} else if(lucifer){enemyName='魔王ルシフェリア';attr='闇'}
-            document.getElementById('tower-enemy-info').innerText=`ボス: ${enemyName} | 属性: ${attr} | 推奨戦闘力: ${800+floor*150}`;
-            const reward=getTowerMilestoneReward(floor), re=document.getElementById('tower-current-reward'); if(re) re.innerHTML=reward?`初回クリア報酬: <span class="text-amber-300">${reward.detail}</span>`:`初回クリア報酬: <i class="fa-solid fa-gem text-[10px]"></i> ${300+floor*10} ジュエル`;
+            const cycle=getTowerCycle(), floor=Math.max(1,Math.min(50,Number(playerData.towerFloor)||1));
+            playerData.towerFloor=floor;
+            const rewards=getCurrentTowerRewards();
+            const clearedFloors=getTowerClearedFloors();
+            document.getElementById('tower-floor-display').innerText=floor;
+            document.getElementById('tower-target-floor').innerText=floor;
+            const nameEl=document.getElementById('tower-name-display');
+            const badgeEl=document.getElementById('tower-mode-badge');
+            const descEl=document.getElementById('tower-description');
+            const statusEl=document.getElementById('tower-unlock-status');
+            const sw1=document.getElementById('tower-switch-1'), sw2=document.getElementById('tower-switch-2');
+            if(sw1){sw1.className=cycle===1?'px-4 py-2 rounded-xl text-xs font-black bg-amber-500 text-slate-950 shadow-lg':'px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-400 border border-slate-700'; sw1.disabled=false;}
+            if(sw2){
+                const unlocked=isTower2Unlocked();
+                sw2.disabled=!unlocked;
+                sw2.className=cycle===2?'px-4 py-2 rounded-xl text-xs font-black bg-purple-600 text-white shadow-lg':(unlocked?'px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-purple-500/40':'px-4 py-2 rounded-xl text-xs font-black bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed');
+                sw2.title=unlocked?'第2塔へ切り替え':'第1塔50Fクリアで解放';
+            }
+            if(cycle===2){
+                if(nameEl) nameEl.innerText='冥界のネメシスタワー';
+                if(badgeEl){badgeEl.innerText='第2塔';badgeEl.classList.add('tower2');}
+                if(descEl) descEl.innerText='第1塔を踏破した者だけが挑める強化塔。上位階層には翠緑の魔姫ヴェルディアが待ち受ける！';
+                if(statusEl){statusEl.innerText=playerData.tower2Completed?'第2塔・全50階層踏破済み':'第1塔50F踏破により解放';statusEl.classList.remove('hidden');}
+            } else {
+                if(nameEl) nameEl.innerText='試練のバベルタワー';
+                if(badgeEl){badgeEl.innerText='第1塔';badgeEl.classList.remove('tower2');}
+                if(descEl) descEl.innerText='全50階層のエンドコンテンツ。最深部では虚無竜クロノスが君臨！';
+                if(statusEl) statusEl.classList.add('hidden');
+            }
+            const list=document.getElementById('tower-reward-list');
+            if(list) list.innerHTML=Object.entries(rewards).map(([f,r])=>renderTowerRewardCard(f,r)).join('');
+            const info=getTowerEnemyInfo(floor,cycle);
+            document.getElementById('tower-enemy-info').innerText=`ボス: ${info.name} | 属性: ${info.attr} | 推奨戦闘力: ${getTowerRecommendedPower(floor,cycle).toLocaleString()}`;
+            const reward=getTowerMilestoneReward(floor,cycle), re=document.getElementById('tower-current-reward');
+            const floorCleared=clearedFloors.includes(floor);
+            if(re) re.innerHTML=floorCleared?`クリア済み：再挑戦報酬なし（Expのみ）`:(reward?`初回クリア報酬: <span class="text-amber-300">${reward.detail}</span>`:`初回クリア報酬: ${getTowerClearRewardHtml(floor,cycle)}`);
+            const btn=document.querySelector('#screen-tower button[onclick="startTowerChallenge()"]');
+            if(btn) btn.innerText = floorCleared ? `第${cycle}塔 第${floor}Fを再挑戦` : `第${cycle}塔 第${floor}Fに挑戦`;
         }
         // ===== 報酬メールボックス =====
         // 今後のログインボーナス、詫び石、イベント報酬なども同じ仕組みで配布できます。
@@ -2258,7 +2589,7 @@
         function rewardLabel(reward) {
             const amount = Number(reward.amount || 1);
             if (reward.kind === 'gems') return `${amount.toLocaleString()} ジュエル`;
-            if (reward.kind === 'crystals') return `${amount.toLocaleString()} クリスタル`;
+            if (reward.kind === 'crystals') return `<span class="inline-flex items-center gap-1"><span class="crystal-icon" aria-hidden="true"></span>${amount.toLocaleString()} クリスタル</span>`;
             if (reward.kind === 'ssrTicket') return `SSR確定ガチャチケット ×${amount}`;
             if (reward.kind === 'relic') return `${reward.name || '限定装備'} ×${amount}`;
             if (reward.kind === 'unit') return `${reward.name || '限定キャラ'} ×${amount}`;
@@ -2266,6 +2597,18 @@
             return reward.name || '報酬';
         }
 
+        function rewardMailSummaryText(mail) {
+            return (mail.rewards || []).map(reward => {
+                const amount = Number(reward.amount || 1);
+                if (reward.kind === 'gems') return `${amount.toLocaleString()} ジュエル`;
+                if (reward.kind === 'crystals') return `${amount.toLocaleString()} クリスタル`;
+                if (reward.kind === 'ssrTicket') return `SSR確定ガチャチケット ×${amount}`;
+                if (reward.kind === 'relic') return `${reward.name || '限定装備'} ×${amount}`;
+                if (reward.kind === 'unit') return `${reward.name || '限定キャラ'} ×${amount}`;
+                if (reward.kind === 'title') return `称号「${reward.name || ''}」`;
+                return reward.name || '報酬';
+            }).join(' / ');
+        }
         function rewardMailSummary(mail) {
             return (mail.rewards || []).map(rewardLabel).join(' / ');
         }
@@ -2301,6 +2644,8 @@
             }
             if (reward.kind === 'title') {
                 playerData.towerTitle = reward.name || playerData.towerTitle;
+                if (!Array.isArray(playerData.titles)) playerData.titles = [];
+                if (reward.name && !playerData.titles.includes(reward.name)) playerData.titles.push(reward.name);
             }
         }
 
@@ -2316,7 +2661,7 @@
             updateMailboxAlert();
             if (!silent) {
                 renderMailboxUI();
-                showCustomModal('報酬獲得', `${mail.title}の報酬を受け取りました。\n${rewardMailSummary(mail)}`);
+                showCustomModal('報酬獲得', `${mail.title}の報酬を受け取りました。\n${rewardMailSummaryText(mail)}`);
             }
             return true;
         }
@@ -2379,48 +2724,38 @@
             alert.classList.toggle('flex', count > 0);
         }
 
-        // 既存セーブのタワー到達済みマイルストーンを救済メールへ移行。
-        // 一度だけ実行するため、以後のログインでは同じメールを重複作成しません。
+        // 既存セーブの第1塔到達済みマイルストーンを救済メールへ移行。
         function migrateRewardMailbox() {
             if (!Array.isArray(playerData.clearedTowerFloors)) playerData.clearedTowerFloors = [];
             if (!Array.isArray(playerData.mailbox)) playerData.mailbox = [];
             if (Number(playerData.mailboxMigrationVersion) >= 1) return;
 
-            Object.entries(TOWER_MILESTONE_REWARDS).forEach(([floor, reward]) => {
+            Object.entries(TOWER_MILESTONE_REWARDS_1).forEach(([floor, reward]) => {
                 const f = Number(floor);
                 if (!playerData.clearedTowerFloors.includes(f)) return;
-                const id = `tower_milestone_${f}_v1`;
-                let rewards = [];
-                if (reward.kind === 'gems') rewards = [{kind:'gems', amount:1000}];
-                if (reward.kind === 'ticket') rewards = [{kind:'ssrTicket', amount:1}];
-                if (reward.kind === 'relic') rewards = [{kind:'relic', masterId:'rel_tower_crown', name:'天穹の王冠', amount:1}];
-                if (reward.kind === 'unit') rewards = [{kind:'unit', unitId:'luciferia', name:'魔王・深淵のルシフェリア', amount:1}];
-                if (reward.kind === 'title') rewards = [{kind:'title', name:'バベルの踏破者', amount:1}];
-                queueRewardMail(`タワー${f}Fクリア報酬`, `過去のタワークリア報酬をメールボックスへお届けします。${f}F到達済みのため受け取れます。`, rewards, {id, category:'tower'});
+                const rewards = getTowerRewardPayload(reward);
+                queueRewardMail(`タワー${f}Fクリア報酬`, `過去の第1塔クリア報酬をメールボックスへお届けします。${f}F到達済みのため受け取れます。`, rewards, {id:`tower1_milestone_${f}_v1`, category:'tower'});
             });
             playerData.mailboxMigrationVersion = 1;
             saveData();
         }
 
-        function addTowerReward(floor){
-            const r=getTowerMilestoneReward(floor); if(!r)return'';
-            let rewards=[];
-            if(r.kind==='gems') rewards=[{kind:'gems',amount:1000}];
-            if(r.kind==='ticket') rewards=[{kind:'ssrTicket',amount:1}];
-            if(r.kind==='relic') rewards=[{kind:'relic',masterId:'rel_tower_crown',name:'天穹の王冠',amount:1}];
-            if(r.kind==='unit') rewards=[{kind:'unit',unitId:'luciferia',name:'魔王・深淵のルシフェリア',amount:1}];
-            if(r.kind==='title') rewards=[{kind:'title',name:'バベルの踏破者',amount:1}];
-            queueRewardMail(`タワー${floor}Fクリア報酬`, `タワーの節目報酬が届きました。メールボックスから受け取ってください。`, rewards, {id:`tower_milestone_${floor}_${Date.now()}`,category:'tower'});
+        function addTowerReward(floor, cycle=getTowerCycle()){
+            const r=getTowerMilestoneReward(floor,cycle); if(!r)return'';
+            const rewards=getTowerRewardPayload(r);
+            if(!rewards.length)return'';
+            queueRewardMail(`第${cycle}塔 ${floor}Fクリア報酬`, `タワーの節目報酬が届きました。メールボックスから受け取ってください。`, rewards, {id:`tower${cycle}_milestone_${floor}_${Date.now()}`,category:'tower'});
             return `${r.detail}（メールボックスに送付）`;
         }
         function startTowerChallenge(){
             const activeParty=playerData.party.filter(id=>id!==null); if(activeParty.length===0){showCustomModal('エラー','出撃パーティを編成してください。');return;}
-            const floor=playerData.towerFloor, chronos=floor>=48, crimson=!chronos&&floor>=46&&floor<=47, bahamut=!chronos&&!crimson&&(floor>=45||(floor%10===5&&floor>=25)), astral=!chronos&&!crimson&&!bahamut&&floor>=41&&floor<=44, lucifer=!chronos&&!crimson&&!bahamut&&!astral&&(floor%10===0||floor>=40);
-            let enemyType='dragon',enemyName='階層守護竜'; if(chronos){enemyType='chronos';enemyName='虚無竜クロノス'} else if(crimson){enemyType='crimson';enemyName='紅蓮終焉の魔竜'} else if(bahamut){enemyType='bahamut';enemyName='滅世竜バハムート'} else if(astral){enemyType='astral';enemyName='星蝕の蒼晶竜'} else if(lucifer){enemyType='luciferia';enemyName='魔王・深淵のルシフェリア'}
-            const towerQuest={id:999,name:`タワー第 ${floor} 階層`,ap:0,rewardExp:100,rewardGems:floor%10===0?0:300+floor*10,waves:[{enemies:[{type:enemyType,name:enemyName,hp:1200+floor*320,atk:60+floor*16,isBoss:true}]}]};
-            isCurrentStageClearedBefore=playerData.clearedTowerFloors.includes(floor); startBattle(towerQuest,activeParty);
+            const cycle=getTowerCycle(), floor=Math.max(1,Math.min(50,Number(playerData.towerFloor)||1)), info=getTowerEnemyInfo(floor,cycle);
+            const difficultyScale=cycle===2?1.28:0.88;
+            const baseHp=1200+floor*320, baseAtk=60+floor*16;
+            const enemyHp=Math.floor(baseHp*difficultyScale), enemyAtk=Math.floor(baseAtk*difficultyScale);
+            const towerQuest={id:999,name:`第${cycle}塔 第${floor}階層`,ap:0,rewardExp:cycle===2?140:100,rewardGems:(floor%10===0)?0:Math.round((cycle===2?500+floor*18:300+floor*10)/50)*50,towerCycle:cycle,towerFloor:floor,waves:[{enemies:[{type:info.type,name:info.name,hp:enemyHp,atk:enemyAtk,isBoss:true}]}]};
+            isCurrentStageClearedBefore=getTowerClearedFloors().includes(floor); startBattle(towerQuest,activeParty);
         }
-
         /* レイド・デイリーミッションUI拡張 */
         function openMissionsModal() {
             renderMissionsUI();
@@ -2722,6 +3057,8 @@
             };
 
             switchTab('battle');
+            initAudio();
+            playBattleBgm();
             initPartyDeck();
             loadWave(0);
         }
@@ -2948,55 +3285,52 @@
             }
 
             playCutin(unit, () => {
-                if (unit.skillType === 'heal') {
-                    // 全体回復
-                    currentBattle.party.forEach((u, i) => {
-                        if (u.hp > 0) {
-                            const healAmount = Math.floor(unit.atk * unit.skillPower);
-                            u.hp = Math.min(u.maxHp, u.hp + healAmount);
-                        }
+                const aliveTargets = currentBattle.enemies.map((e, i) => ({ enemy: e, index: i })).filter(x => x.enemy.hp > 0);
+                const firstTarget = aliveTargets[0];
+                const damageTarget = (target, multPower, status) => {
+                    if (!target) return 0;
+                    const mult = getElementMultiplier(unit.element, target.enemy.element);
+                    let dmg = Math.floor(unit.atk * multPower * mult);
+                    if (unit.status === 'atk_up') dmg = Math.floor(dmg * 1.3);
+                    target.enemy.hp -= dmg;
+                    if (status) target.enemy.status = status;
+                    showDamageNumberOnEnemy(target.index, dmg, true, mult > 1 ? 'weak' : (mult < 1 ? 'resist' : ''));
+                    updateSingleEnemyHpUI(target.index);
+                    return dmg;
+                };
+                if (unit.skillType === 'heal' || unit.skillType === 'cleanse') {
+                    currentBattle.party.forEach(u => {
+                        if (u.hp > 0) u.hp = Math.min(u.maxHp, u.hp + Math.floor(unit.atk * unit.skillPower));
+                        if (unit.skillType === 'cleanse' || unit.statusEffect === 'cleanse') u.status = null;
                     });
-                    playSE('heal');
+                    playSE('heal'); updatePartyBarsUI();
+                } else if (unit.skillType === 'buff') {
+                    currentBattle.party.forEach(u => { if (u.hp > 0) u.status = 'atk_up'; });
+                    playSE('heal'); updatePartyBarsUI();
+                } else if (unit.skillType === 'shield') {
+                    currentBattle.party.forEach(u => { if (u.hp > 0) u.status = 'shield'; });
+                    playSE('heal'); updatePartyBarsUI();
+                } else if (unit.skillType === 'drain') {
+                    const dmg = damageTarget(firstTarget, unit.skillPower, unit.statusEffect);
+                    unit.hp = Math.min(unit.maxHp, unit.hp + Math.floor(dmg * 0.5));
                     updatePartyBarsUI();
-                } else if (unit.skillType === 'all') {
-                    // 全体攻撃
-                    currentBattle.enemies.forEach((e, idx) => {
-                        if (e.hp > 0) {
-                            let mult = getElementMultiplier(unit.element, e.element);
-                            let dmg = Math.floor(unit.atk * unit.skillPower * mult);
-                            if (unit.status === 'atk_up') dmg = Math.floor(dmg * 1.3);
-                            e.hp -= dmg;
-                            if (unit.statusEffect) e.status = unit.statusEffect;
-
-                            let elemEff = mult > 1.0 ? 'weak' : (mult < 1.0 ? 'resist' : '');
-                            showDamageNumberOnEnemy(idx, dmg, true, elemEff);
-                            updateSingleEnemyHpUI(idx);
-                        }
-                    });
                     playSE('crit');
-                } else {
-                    // 単体特大攻撃
-                    const targets = currentBattle.enemies.map((e, i) => ({ enemy: e, index: i })).filter(item => item.enemy.hp > 0);
-                    if (targets.length > 0) {
-                        const target = targets[0];
-                        let mult = getElementMultiplier(unit.element, target.enemy.element);
-                        let dmg = Math.floor(unit.atk * unit.skillPower * mult);
-                        if (unit.status === 'atk_up') dmg = Math.floor(dmg * 1.3);
-                        target.enemy.hp -= dmg;
-                        if (unit.statusEffect) target.enemy.status = unit.statusEffect;
-
-                        let elemEff = mult > 1.0 ? 'weak' : (mult < 1.0 ? 'resist' : '');
-                        showDamageNumberOnEnemy(target.index, dmg, true, elemEff);
-                        updateSingleEnemyHpUI(target.index);
+                } else if (unit.skillType === 'execute') {
+                    if (firstTarget) {
+                        const ratio = firstTarget.enemy.hp / firstTarget.enemy.maxHp;
+                        damageTarget(firstTarget, unit.skillPower * (ratio <= 0.5 ? 1.8 : 1), unit.statusEffect);
                     }
                     playSE('crit');
+                } else if (unit.skillType === 'stun') {
+                    damageTarget(firstTarget, unit.skillPower, 'stun'); playSE('crit');
+                } else if (unit.skillType === 'all') {
+                    aliveTargets.forEach(target => damageTarget(target, unit.skillPower, unit.statusEffect));
+                    playSE('crit');
+                } else {
+                    damageTarget(firstTarget, unit.skillPower, unit.statusEffect); playSE('crit');
                 }
-
-                if (unit.statusEffect === 'atk_up') unit.status = 'atk_up';
-
-                if (currentBattle.enemies.every(e => e.hp <= 0)) {
-                    handleEnemyKilled();
-                }
+                if (unit.statusEffect === 'atk_up' && unit.skillType !== 'buff') unit.status = 'atk_up';
+                if (currentBattle.enemies.every(e => e.hp <= 0)) handleEnemyKilled();
             });
         }
 
@@ -3084,6 +3418,7 @@
                             const targetUnit = aliveParty[Math.floor(Math.random() * aliveParty.length)];
                             const mult = getElementMultiplier(enemy.element, targetUnit.element);
                             let eDmg = Math.floor(enemy.atk * (0.8 + Math.random() * 0.4) * mult);
+                            if (targetUnit.status === 'shield') eDmg = Math.floor(eDmg * 0.7);
                             
                             targetUnit.hp -= eDmg;
                             playSE('hit');
@@ -3145,29 +3480,45 @@
                     // 以前の処理ではタワー勝利時に towerFloor を進める処理がなく、
                     // セーブされた階層から先へ進めなくなっていた。
                     if (clearedQuest.id === 999) {
-                        const clearedFloor = Number(playerData.towerFloor) || 1;
-                        if (!Array.isArray(playerData.clearedTowerFloors)) {
-                            playerData.clearedTowerFloors = [];
-                        }
+                        const cycle=Number(clearedQuest.towerCycle || playerData.towerCycle || 1)===2?2:1;
+                        const clearedFloor = Number(clearedQuest.towerFloor || playerData.towerFloor) || 1;
+                        const clearedList = cycle===2 ? (playerData.tower2ClearedFloors || []) : (playerData.clearedTowerFloors || []);
+                        if (cycle===2 && !Array.isArray(playerData.tower2ClearedFloors)) playerData.tower2ClearedFloors=[];
+                        if (cycle===1 && !Array.isArray(playerData.clearedTowerFloors)) playerData.clearedTowerFloors=[];
 
                         if (!isCurrentStageClearedBefore) {
-                            if (!playerData.clearedTowerFloors.includes(clearedFloor)) {
-                                playerData.clearedTowerFloors.push(clearedFloor);
+                            if (!clearedList.includes(clearedFloor)) clearedList.push(clearedFloor);
+                            if (clearedFloor < 50) {
+                                playerData.towerFloor = clearedFloor + 1;
+                            } else if (cycle===1) {
+                                // 第1塔50F踏破で第2塔を解放。現在は第1塔の50Fを維持し、切り替えボタンから第2塔へ移動する。
+                                playerData.tower2Unlocked = true;
+                                playerData.towerCycle = 1;
+                                playerData.towerFloor = 50;
+                            } else {
+                                playerData.towerCycle = 2;
+                                playerData.towerFloor = 50;
+                                playerData.tower2Completed = true;
                             }
-                            playerData.towerFloor = Math.max(clearedFloor + 1, Number(playerData.towerFloor) || 1);
                         }
 
+                        // タワーは各階層の初回クリア時のみジュエル・節目報酬を獲得。再挑戦はExpのみ。
+                        const firstTowerClear = !isCurrentStageClearedBefore;
+                        const towerGemReward = firstTowerClear ? rewardGems : 0;
                         playerData.gems = Number(playerData.gems) || 0;
-                        playerData.gems += rewardGems;
+                        playerData.gems += towerGemReward;
                         addPlayerExp(clearedQuest.rewardExp);
                         let milestoneText = '';
-                        if (!isCurrentStageClearedBefore) milestoneText = addTowerReward(clearedFloor);
+                        if (!isCurrentStageClearedBefore) milestoneText = addTowerReward(clearedFloor, cycle);
                         saveData();
                         updateHeaderUI();
                         renderTowerUI();
-                        const normalRewardText = rewardGems > 0 ? `${rewardGems} ジュエル & ` : '';
-                        const milestoneLine = milestoneText ? `\n\n★ タワー限定報酬 ★\n${milestoneText}` : '';
-                        showCustomModal('VICTORY!', `タワー第${clearedFloor}階層をクリアしました！\n次の階層: 第${playerData.towerFloor}階\n報酬: ${normalRewardText}Exp獲得！${milestoneLine}`);
+                        const normalRewardText = towerGemReward > 0 ? `${towerGemReward} ジュエル & ` : (firstTowerClear ? '' : '再挑戦報酬なし & ');
+                        const milestoneLine = milestoneText ? `\n\n★ 第${cycle}塔 限定報酬 ★\n${milestoneText}` : '';
+                        const unlockLine = (!isCurrentStageClearedBefore && cycle===1 && clearedFloor===50) ? `\n\n★ 第2塔「冥界のネメシスタワー」解放！\n第1塔より高難度の1Fから再挑戦できます。` : '';
+                        const nextText = cycle===1 && clearedFloor===50 ? '第1塔・50階（踏破済み／第2塔解放）' : (cycle===2 && clearedFloor===50 ? '第2塔・50階（踏破済み）' : `第${cycle}塔・第${playerData.towerFloor}階`);
+                        showCustomModal('VICTORY!', `第${cycle}塔 第${clearedFloor}階層をクリアしました！\n次の階層: ${nextText}\n報酬: ${normalRewardText}Exp獲得！${milestoneLine}${unlockLine}`);
+                        stopBattleBgm();
                         switchTab('tower');
                         return;
                     }
@@ -3191,6 +3542,19 @@
                 updateHeaderUI();
             }
         }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            const settings = document.getElementById('settings-modal');
+            if (settings && !settings.classList.contains('hidden')) { closeSettingsModal(); return; }
+            const titleModal = document.getElementById('name-modal');
+            if (titleModal && !titleModal.classList.contains('hidden')) return;
+            const custom = document.getElementById('custom-modal');
+            if (custom && !custom.classList.contains('hidden')) return;
+            const homeVisible = !document.getElementById('screen-home')?.classList.contains('hidden');
+            const battleVisible = !document.getElementById('screen-battle')?.classList.contains('hidden');
+            if (homeVisible || battleVisible) { event.preventDefault(); openSettingsModal(); }
+        });
 
         function retreatBattle() {
             showConfirmModal('撤退の確認', 'バトルから撤退しますか？（消費したAPは戻りません）', async () => {
