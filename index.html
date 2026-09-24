@@ -27,6 +27,31 @@
             color: #ffffff;
         }
         .font-cinzel { font-family: 'Cinzel', serif; }
+        /* スマホでは画面全体を縦・横どちらにもスクロール可能にする */
+        @media (max-width: 767px) {
+            html {
+                width: 100%;
+                min-height: 100%;
+                overflow: auto;
+            }
+            body {
+                width: 100%;
+                min-width: 100%;
+                min-height: 100dvh;
+                height: auto;
+                overflow: auto;
+                touch-action: pan-x pan-y;
+                align-items: flex-start;
+            }
+            #app {
+                width: 100%;
+                min-width: 100%;
+                min-height: 100dvh;
+                height: auto;
+                overflow: auto;
+            }
+        }
+
         
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
@@ -933,14 +958,22 @@
         battleBgm.loop = true;
         battleBgm.preload = 'auto';
 
+        // 戦闘中以外で流すホームBGM（添付の home_bgm.mp3）
+        const homeBgm = new Audio('home_bgm.mp3');
+        homeBgm.loop = true;
+        homeBgm.preload = 'auto';
+
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
         function applyAudioSettings() {
-            battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
+            const volume = Math.max(0, Math.min(1, bgmVolume));
+            battleBgm.volume = volume;
             battleBgm.muted = bgmVolume <= 0;
+            homeBgm.volume = volume;
+            homeBgm.muted = bgmVolume <= 0;
             const b = document.getElementById('bgm-volume-slider');
             const s = document.getElementById('se-volume-slider');
             const bv = document.getElementById('bgm-volume-value');
@@ -954,9 +987,22 @@
         function setBgmVolume(value) {
             bgmVolume = Number(value) / 100;
             playerData.bgmVolume = bgmVolume;
-            battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
+            const volume = Math.max(0, Math.min(1, bgmVolume));
+            battleBgm.volume = volume;
             battleBgm.muted = bgmVolume <= 0;
-            if (bgmVolume <= 0) { battleBgm.pause(); }
+            homeBgm.volume = volume;
+            homeBgm.muted = bgmVolume <= 0;
+
+            if (bgmVolume <= 0) {
+                battleBgm.pause();
+                homeBgm.pause();
+            } else {
+                // 現在が戦闘中なら戦闘BGM、それ以外ならホームBGMを再開
+                const battleVisible = !document.getElementById('screen-battle')?.classList.contains('hidden');
+                if (battleVisible) playBattleBgm();
+                else playHomeBgm();
+            }
+
             const el = document.getElementById('bgm-volume-value');
             if (el) el.innerText = Math.round(bgmVolume * 100) + '%';
             saveData();
@@ -970,9 +1016,23 @@
             saveData();
         }
 
+        function playHomeBgm() {
+            applyAudioSettings();
+            if (bgmVolume <= 0) { homeBgm.pause(); return; }
+            battleBgm.pause();
+            homeBgm.muted = false;
+            homeBgm.volume = Math.max(0, Math.min(1, bgmVolume));
+            homeBgm.play().catch(() => {});
+        }
+
+        function stopHomeBgm() {
+            homeBgm.pause();
+        }
+
         function playBattleBgm() {
             applyAudioSettings();
             if (bgmVolume <= 0) { battleBgm.pause(); return; }
+            homeBgm.pause();
             battleBgm.muted = false;
             battleBgm.volume = Math.max(0, Math.min(1, bgmVolume));
             battleBgm.currentTime = 0;
@@ -1339,6 +1399,8 @@
 
         function handleTitleTap() {
             playSE('skill');
+            // タイトル画面でも、ユーザー操作をきっかけにホームBGMを開始
+            playHomeBgm();
             if (!playerData.name || playerData.name === '' || playerData.name === '召喚士') {
                 const modal = document.getElementById('name-modal');
                 modal.classList.remove('hidden');
@@ -1441,7 +1503,11 @@
             if (gameHeader) gameHeader.classList.toggle('hidden', isBattle);
             if (bottomNav) bottomNav.classList.toggle('hidden', isBattle);
 
-            if (tabId !== 'battle') stopBattleBgm();
+            if (tabId === 'battle') {
+                stopHomeBgm();
+            } else {
+                stopBattleBgm();
+            }
             document.querySelectorAll('.view-screen').forEach(s => s.classList.add('hidden'));
             document.getElementById(`screen-${tabId}`)?.classList.remove('hidden');
 
@@ -1451,6 +1517,11 @@
             });
             const navBtn = document.getElementById(`nav-${tabId}`);
             if(navBtn) navBtn.classList.add('text-amber-400', 'active-tab');
+
+            if(tabId !== 'battle') {
+                // 戦闘中以外は常にホームBGMを再生（タブ移動時も曲を維持）
+                playHomeBgm();
+            }
 
             if(tabId === 'home') {
                 updateHomeDisplay();
