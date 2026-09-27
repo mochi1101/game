@@ -861,22 +861,10 @@
                     <h3 class="text-base md:text-lg font-black text-rose-400">レイドボス「終焉巨神ベヒモス」</h3>
                     <button onclick="closeRaidModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
                 </div>
-                <p class="text-xs text-slate-300 mb-3">世界中の全召喚士とともに総力戦！ダメージを与えるほど豪華報酬！</p>
-                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 mb-3 text-left space-y-1 text-xs">
+                <p class="text-xs text-slate-300 mb-4">世界中の全召喚士とともに総力戦！ダメージを与えるほど豪華報酬！</p>
+                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 mb-4 text-left space-y-1 text-xs">
                     <div class="flex justify-between"><span>あなたの累計ダメージ:</span><span id="raid-my-damage" class="font-bold text-amber-300">0</span></div>
-                    <div class="flex justify-between"><span>レイド参加可能回数:</span><span id="raid-tickets" class="font-bold text-emerald-400">無制限</span></div>
-                </div>
-                <div class="bg-rose-950/30 border border-rose-500/20 rounded-2xl p-3 mb-4 text-left">
-                    <div class="text-[10px] font-black text-rose-300 mb-2">累計ダメージ報酬</div>
-                    <div class="grid grid-cols-2 gap-1 text-[9px] text-slate-300">
-                        <div>10万 → <span class="text-amber-300">100ジュエル</span></div>
-                        <div>50万 → <span class="text-amber-300">300ジュエル</span></div>
-                        <div>100万 → <span class="text-amber-300">500ジュエル</span></div>
-                        <div>300万 → <span class="text-cyan-300">1,000ジュエル＋100クリスタル</span></div>
-                        <div>500万 → <span class="text-purple-300">SSR確定チケット</span></div>
-                        <div>1,000万 → <span class="text-amber-300">2,000ジュエル＋200クリスタル</span></div>
-                    </div>
-                    <div class="text-[9px] text-slate-500 mt-2">達成した報酬はメールボックスに届きます。</div>
+                    <div class="flex justify-between"><span>レイド参加可能回数:</span><span id="raid-tickets" class="font-bold text-emerald-400">3 / 3</span></div>
                 </div>
                 <button onclick="startRaidBattle()" class="w-full bg-gradient-to-r from-rose-600 to-amber-500 text-white font-black text-sm py-3 rounded-xl shadow-lg active:scale-95 transition">
                     レイドバトル開始 (スタミナ消費なし)
@@ -1371,9 +1359,7 @@
             // レイド関連データ
             raidDamage: 0,
             raidTickets: 3,
-            raidBossHp: 10000000,
-            // レイド報酬の受取済み管理（同じ報酬の二重配布を防止）
-            raidRewardClaims: {}
+            raidBossHp: 10000000
         };
 
         // レイドボスHPはセーブデータに保持し、ホームへ戻っても同じ残量を表示する
@@ -1493,7 +1479,6 @@
             seVolume = Number.isFinite(Number(playerData.seVolume)) ? Math.max(0, Math.min(1, Number(playerData.seVolume))) : 0.7;
             if (!Number.isFinite(Number(playerData.towerFloor)) || Number(playerData.towerFloor) < 1) playerData.towerFloor = 1;
             if (!Array.isArray(playerData.mailbox)) playerData.mailbox = [];
-            if (!playerData.raidRewardClaims || typeof playerData.raidRewardClaims !== 'object' || Array.isArray(playerData.raidRewardClaims)) playerData.raidRewardClaims = {};
             if (typeof playerData.homeUnitId !== 'string') playerData.homeUnitId = '';
             if (!Number.isFinite(Number(playerData.mailboxMigrationVersion))) playerData.mailboxMigrationVersion = 0;
             migrateRewardMailbox();
@@ -3080,7 +3065,6 @@
                 raidBossHp = hp;
                 playerData.raidBossHp = hp;
                 saveData();
-                if (raidBossHp <= 0) processRaidDefeatReward();
                 updateRaidBannerUI();
                 return hp;
             } catch (e) {
@@ -3099,7 +3083,6 @@
                 playerData.raidBossHp = raidBossHp;
                 playerData.raidDamage = (Number(playerData.raidDamage) || 0) + dmg;
                 saveData();
-                processRaidRewards();
                 updateRaidBannerUI();
                 return raidBossHp;
             }
@@ -3120,7 +3103,6 @@
                 playerData.raidBossHp = hp;
                 playerData.raidDamage = (Number(playerData.raidDamage) || 0) + dmg;
                 saveData();
-                processRaidRewards();
                 updateRaidBannerUI();
                 return hp;
             } catch (e) {
@@ -3146,50 +3128,6 @@
             const startHp = Math.max(0, Number(currentBattle.quest.raidStartHp) || 0);
             const enemyHp = Math.max(0, Number(currentBattle.enemies?.[0]?.hp) || 0);
             return Math.max(0, Math.min(startHp, startHp - enemyHp));
-        }
-
-        // ===== レイド報酬 =====
-        // ダメージ報酬は累計ダメージの到達時に1回だけメールボックスへ送る。
-        const RAID_DAMAGE_REWARDS = [
-            { key:'damage_100k', threshold:100000, label:'累計10万ダメージ報酬', rewards:[{kind:'gems',amount:100}] },
-            { key:'damage_500k', threshold:500000, label:'累計50万ダメージ報酬', rewards:[{kind:'gems',amount:300}] },
-            { key:'damage_1m', threshold:1000000, label:'累計100万ダメージ報酬', rewards:[{kind:'gems',amount:500}] },
-            { key:'damage_3m', threshold:3000000, label:'累計300万ダメージ報酬', rewards:[{kind:'gems',amount:1000},{kind:'crystals',amount:100}] },
-            { key:'damage_5m', threshold:5000000, label:'累計500万ダメージ報酬', rewards:[{kind:'ssrTicket',amount:1}] },
-            { key:'damage_10m', threshold:10000000, label:'累計1,000万ダメージ報酬', rewards:[{kind:'gems',amount:2000},{kind:'crystals',amount:200}] }
-        ];
-
-        function processRaidDamageRewards() {
-            if (!playerData.raidRewardClaims || typeof playerData.raidRewardClaims !== 'object') playerData.raidRewardClaims = {};
-            const damage = Math.max(0, Number(playerData.raidDamage) || 0);
-            let added = false;
-            RAID_DAMAGE_REWARDS.forEach(r => {
-                if (damage >= r.threshold && !playerData.raidRewardClaims[r.key]) {
-                    queueRewardMail(r.label, `レイドで累計 ${r.threshold.toLocaleString()} ダメージを達成しました。報酬を受け取ってください。`, r.rewards, {id:`raid_${r.key}_v1`,category:'raid'});
-                    playerData.raidRewardClaims[r.key] = true;
-                    added = true;
-                }
-            });
-            if (added) saveData();
-        }
-
-        function processRaidDefeatReward() {
-            if (raidBossHp > 0) return false;
-            if ((Number(playerData.raidDamage) || 0) <= 0) return false;
-            if (!playerData.raidRewardClaims || typeof playerData.raidRewardClaims !== 'object') playerData.raidRewardClaims = {};
-            if (playerData.raidRewardClaims.defeat_v1) return false;
-            queueRewardMail('ベヒモス討伐報酬', '終焉巨神ベヒモスが討伐されました！レイドに参加したあなたへ討伐報酬をお送りします。', [
-                {kind:'gems',amount:500},
-                {kind:'crystals',amount:100}
-            ], {id:'raid_defeat_v1',category:'raid'});
-            playerData.raidRewardClaims.defeat_v1 = true;
-            saveData();
-            return true;
-        }
-
-        function processRaidRewards() {
-            processRaidDamageRewards();
-            processRaidDefeatReward();
         }
 
         async function finalizeRaidDamage() {
@@ -3688,7 +3626,7 @@
                                 await syncSharedRaidHpAndRender();
                                 showCustomModal(
                                     '敗北...',
-                                    `パーティが全滅しました。\n今回のダメージ: ${getCurrentRaidDamage().toLocaleString()}\n与えたダメージは全プレイヤー共通のレイドHPに反映されました。\n到達したダメージ報酬はメールボックスへ送付されています。`
+                                    `パーティが全滅しました。\n今回のダメージ: ${getCurrentRaidDamage().toLocaleString()}\n与えたダメージは全プレイヤー共通のレイドHPに反映されました。`
                                 );
                                 switchTab('home');
                             });
@@ -3718,9 +3656,7 @@
                 if (currentBattle.quest.isRaid) {
                     // 戦闘で実際に削ったHPだけをWorkerへ反映
                     await finalizeRaidDamage();
-                    processRaidRewards();
-                    processRaidDefeatReward();
-                    showCustomModal('RAID VICTORY!', `終焉巨神ベヒモスを撃破しました！\n今回のダメージ: ${getCurrentRaidDamage().toLocaleString()}\n累計ダメージ報酬・討伐報酬をメールボックスへ送付しました。`);
+                    showCustomModal('RAID VICTORY!', `終焉巨神ベヒモスを撃破しました！\n今回のダメージ: ${getCurrentRaidDamage().toLocaleString()}\n全プレイヤー共通のレイドHPに反映しました。`);
                     switchTab('home');
                     return;
                 } else {
