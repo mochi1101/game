@@ -511,7 +511,7 @@
 
                     <div class="flex flex-col gap-3 md:gap-4 items-center w-full mt-3">
                         <div id="gacha-banner-box" class="relative w-full rounded-2xl md:rounded-3xl border-2 border-amber-400/80 overflow-hidden bg-slate-900 shadow-[0_0_35px_rgba(245,158,11,0.3)] flex flex-col justify-end group">
-                            <img id="gacha-banner-img" src="astrea.png" class="absolute inset-0 w-full h-full group-hover:scale-105 transition-transform duration-500" alt="Gacha Banner">
+                            <img id="gacha-banner-img" src="gal_gacha_character.png" class="absolute inset-0 w-full h-full group-hover:scale-105 transition-transform duration-500" alt="Gacha Banner">
                             
                             <div id="gacha-relic-display" class="hidden absolute inset-0 bg-gradient-to-br from-slate-950 via-amber-950/60 to-slate-900 p-4 md:p-6 flex-col justify-center items-center text-center space-y-3 md:space-y-4">
                                 <div class="flex justify-center items-center space-x-4 md:space-x-8 my-2">
@@ -1243,6 +1243,12 @@
                 skillName: 'エメラルド・アビス', skillType: 'shield', skillPower: 2.85,
                 statusEffect: 'def_down', dialogue: '「深緑の檻へようこそ。ここから先は、私を越えてみせて。」'
             },
+            'gal': {
+                id: 'gal', name: '爆走ギャル・ミレイ', rarity: 'SSR', element: 'light',
+                image: 'gal_gacha_character.png', baseHp: 1060, baseAtk: 265,
+                skillName: 'ギャル・ラッシュ☆', skillType: 'all', skillPower: 2.65,
+                statusEffect: 'atk_up', dialogue: '「テンションMAXでいくよ☆ あたしのスピード、ついてこれる？」'
+            },
             'kaede': {
                 id: 'kaede', name: '紅葉の軍師カエデ', rarity: 'SR', element: 'fire',
                 image: 'Gemini_Generated_Image_88wbnf88wbnf88wb.png', baseHp: 700, baseAtk: 145,
@@ -1328,6 +1334,26 @@
             { id: 10, chapter: 10, name: '10章：紅蓮終焉の魔境', ap: 40, rewardExp: 850, rewardGems: 1600, waves: [
                 { enemies: [{ type: 'crimson', hp: 18000, atk: 340 }, { type: 'bahamut', hp: 14000, atk: 280 }] },
                 { enemies: [{ type: 'crimson', hp: 38000, atk: 560, isBoss: true }] }
+            ] },
+            { id: 11, chapter: 11, name: '11章：極限・魔王城決戦', ap: 45, rewardExp: 1100, rewardGems: 2000, waves: [
+                { enemies: [{ type: 'luciferia', hp: 22000, atk: 430 }, { type: 'verdia', hp: 20000, atk: 400 }] },
+                { enemies: [{ type: 'luciferia', hp: 60000, atk: 720, isBoss: true }, { type: 'verdia', hp: 26000, atk: 460 }] }
+            ] },
+            { id: 12, chapter: 12, name: '12章：翠緑の終末領域', ap: 50, rewardExp: 1400, rewardGems: 2400, waves: [
+                { enemies: [{ type: 'verdia', hp: 28000, atk: 500 }, { type: 'astral', hp: 24000, atk: 450 }] },
+                { enemies: [{ type: 'verdia', hp: 72000, atk: 820, isBoss: true }, { type: 'astral', hp: 30000, atk: 500 }] }
+            ] },
+            { id: 13, chapter: 13, name: '13章：星蝕と紅蓮の狂宴', ap: 55, rewardExp: 1800, rewardGems: 2800, waves: [
+                { enemies: [{ type: 'astral', hp: 34000, atk: 560 }, { type: 'crimson', hp: 32000, atk: 540 }] },
+                { enemies: [{ type: 'astral', hp: 85000, atk: 900, isBoss: true }, { type: 'crimson', hp: 42000, atk: 620 }] }
+            ] },
+            { id: 14, chapter: 14, name: '14章：滅世双竜の試練', ap: 60, rewardExp: 2300, rewardGems: 3200, waves: [
+                { enemies: [{ type: 'bahamut', hp: 42000, atk: 650 }, { type: 'chronos', hp: 38000, atk: 620 }] },
+                { enemies: [{ type: 'bahamut', hp: 105000, atk: 1050, isBoss: true }, { type: 'chronos', hp: 50000, atk: 700 }] }
+            ] },
+            { id: 15, chapter: 15, name: '15章：終極・虚無崩壊', ap: 70, rewardExp: 3000, rewardGems: 4000, waves: [
+                { enemies: [{ type: 'verdia', hp: 50000, atk: 720 }, { type: 'crimson', hp: 48000, atk: 700 }, { type: 'astral', hp: 46000, atk: 680 }] },
+                { enemies: [{ type: 'chronos', hp: 140000, atk: 1250, isBoss: true }, { type: 'verdia', hp: 65000, atk: 780 }] }
             ] }
         ];
 
@@ -2067,11 +2093,12 @@
             const bannerTag = document.getElementById('gacha-banner-tag');
 
             if(type === 'char') {
+                bannerImg.src = 'gal_gacha_character.png';
                 bannerImg.classList.remove('hidden');
                 relicDisplay.classList.add('hidden');
                 bannerTag.innerText = 'PICK UP SSR 1.5%';
-                document.getElementById('gacha-banner-title').innerText = '【SSR】聖輝の女神アストレア＆黒月の剣聖セレネ';
-                document.getElementById('gacha-banner-desc').innerText = '【光＆闇属性】新SSR2体が登場！「アストラル・ブレス」「ムーン・リーパー」発動可能！';
+                document.getElementById('gacha-banner-title').innerText = '【SSR PICK UP】爆走ギャル・ミレイ';
+                document.getElementById('gacha-banner-desc').innerText = '【光属性】新SSR「爆走ギャル・ミレイ」登場！「ギャル・ラッシュ☆」で敵全体を一掃！';
             } else {
                 bannerImg.classList.add('hidden');
                 relicDisplay.classList.remove('hidden');
@@ -2123,10 +2150,11 @@
                 if(currentGachaType === 'char') {
                     const rand = Math.random() * 100;
                     let id = 'iris';
-                    // 新SSR 2体を追加。SSR合計出現率は従来どおり6%（各SSR 1.5%）。
-                    if (rand < 1.5) id = 'astrea';
-                    else if (rand < 3.0) id = 'selene';
-                    else if (rand < 4.5) id = 'freya';
+                    // SSR合計出現率は6%。新SSRミレイをPICK UP（1.5%）、既存SSRを各1.125%。
+                    if (rand < 1.5) id = 'gal';
+                    else if (rand < 2.625) id = 'astrea';
+                    else if (rand < 3.75) id = 'selene';
+                    else if (rand < 4.875) id = 'freya';
                     else if (rand < 6.0) id = 'aquaria';
                     else if (rand < 15.0) id = 'lumina';
                     else if (rand < 25.0) id = 'veronica';
@@ -2200,9 +2228,9 @@
         }
 
         function performSSRTicketGacha() {
-            if ((Number(playerData.ssrTickets) || 0) <= 0) { showCustomModal('チケット不足', 'SSR確定ガチャチケットを所持していません。タワー20Fをクリアすると獲得できます。'); return; }
+            if ((Number(playerData.ssrTickets) || 0) <= 0) { showCustomModal('チケット不足', 'SSR確定ガチャチケットを所持していません。タワー報酬などで獲得できます。'); return; }
             playerData.ssrTickets -= 1;
-            const ssrPool = ['astrea', 'selene', 'freya', 'aquaria'];
+            const ssrPool = ['gal', 'astrea', 'selene', 'freya', 'aquaria'];
             const id = ssrPool[Math.floor(Math.random() * ssrPool.length)];
             const unit = MASTER_UNITS[id];
             const isNew = !playerData.inventory[id];
@@ -2585,6 +2613,11 @@
                 if (q.chapter === 8) descText = '※ 虚無より出でし「虚無竜クロノス」降臨！';
                 if (q.chapter === 9) descText = '※ 星蝕を喰らう「星蝕の蒼晶竜」降臨！';
                 if (q.chapter === 10) descText = '※ 紅蓮の終焉「紅蓮終焉の魔竜」降臨！';
+                if (q.chapter === 11) descText = '※ 極限難度。魔王ルシフェリア＆ヴェルディアが同時襲来！';
+                if (q.chapter === 12) descText = '※ 翠緑の魔姫ヴェルディアがさらに強化されて登場！';
+                if (q.chapter === 13) descText = '※ 星蝕と紅蓮、2属性の超強敵を突破せよ！';
+                if (q.chapter === 14) descText = '※ 滅世竜バハムートと虚無竜クロノスの連戦！';
+                if (q.chapter === 15) descText = '※ 最高難度。虚無竜クロノスの最終形態に挑め！';
 
                 card.innerHTML = `
                     <div>
@@ -3982,6 +4015,11 @@
         let firebaseUser = null;
         let cloudSaveTimer = null;
         let firebaseReady = false;
+        let cloudSaveInProgress = false;
+        let cloudAuthFlowInProgress = false;
+        let suppressCloudAutoSave = false;
+        const CLOUD_SAVE_SCHEMA_VERSION = 18;
+        const LOCAL_SAVE_UPDATED_KEY = 'arcana_connect_local_save_updated_v1';
 
         function setFirebaseStatus(message, tone = 'normal') {
             const el = document.getElementById('firebase-cloud-status');
@@ -4031,166 +4069,16 @@
                 if (showMessage) setFirebaseStatus('Google連携後にクラウド保存できます', 'error');
                 return false;
             }
+            if (cloudSaveInProgress) return false;
+            cloudSaveInProgress = true;
             try {
+                const gameData = getCloudGameData();
                 const ref = doc(firebaseDb, 'users', firebaseUser.uid);
                 await setDoc(ref, {
-                    gameData: getCloudGameData(),
-                    schemaVersion: 17,
-                    updatedAt: serverTimestamp()
-                }, { merge: true });
-                if (showMessage) setFirebaseStatus('クラウドに保存しました', 'ok');
-                return true;
-            } catch (e) {
-                console.error('Firebase cloud save failed:', e);
-                if (showMessage) setFirebaseStatus('クラウド保存に失敗しました', 'error');
-                return false;
-            }
-        }
-
-        async function loadGameFromCloud(showMessage = true) {
-            if (!firebaseReady || !firebaseUser || !firebaseDb) {
-                if (showMessage) setFirebaseStatus('Google連携後にクラウド読み込みできます', 'error');
-                return false;
-            }
-            try {
-                const ref = doc(firebaseDb, 'users', firebaseUser.uid);
-                const snap = await getDoc(ref);
-                if (!snap.exists() || !snap.data().gameData) {
-                    if (showMessage) setFirebaseStatus('クラウドセーブはまだありません', 'error');
-                    return false;
-                }
-                const cloudData = snap.data().gameData;
-                if (typeof window.setPlayerData === 'function') {
-                    window.setPlayerData({ ...window.getPlayerData(), ...cloudData });
-                } else {
-                    window.playerData = { ...window.playerData, ...cloudData };
-                }
-                if (typeof window.saveData === 'function') window.saveData();
-                if (typeof window.updateHeaderUI === 'function') window.updateHeaderUI();
-                if (typeof window.updateHomeDisplay === 'function') window.updateHomeDisplay();
-                if (typeof window.renderPartyUI === 'function') window.renderPartyUI();
-                if (typeof window.renderTowerUI === 'function') window.renderTowerUI();
-                if (typeof window.renderFriendsUI === 'function') window.renderFriendsUI();
-                if (typeof window.updateMailboxAlert === 'function') window.updateMailboxAlert();
-                if (showMessage) setFirebaseStatus('クラウドデータを読み込みました', 'ok');
-                return true;
-            } catch (e) {
-                console.error('Firebase cloud load failed:', e);
-                if (showMessage) setFirebaseStatus('クラウド読み込みに失敗しました', 'error');
-                return false;
-            }
-        }
-
-        window.firebaseGoogleSignIn = async function() {
-            if (location.protocol === 'file:') {
-                setFirebaseStatus('HTMLを直接開いているためGoogleログインはできません。先に「データをバックアップ」し、Web版でそのバックアップを復元してください', 'error');
-                return;
-            }
-            if (!FIREBASE_ENABLED) {
-                setFirebaseStatus('HTMLのFirebase設定を入力して有効化してください', 'error');
-                return;
-            }
-            if (!firebaseReady) {
-                setFirebaseStatus('Firebaseが初期化されていません', 'error');
-                return;
-            }
-            try {
-                const provider = new GoogleAuthProvider();
-                const result = await signInWithPopup(firebaseAuth, provider);
-                firebaseUser = result.user;
-                setFirebaseAccountStatus(`${firebaseUser.displayName || 'Googleアカウント'} と連携中`, 'ok');
-                // 初回連携では「現在の端末データ」を優先。ただしクラウドに既存データがある場合は上書き前に確認する。
-                const ref = doc(firebaseDb, 'users', firebaseUser.uid);
-                const existing = await getDoc(ref);
-                const hasCloud = existing.exists() && !!existing.data()?.gameData;
-                if (hasLocalGameSave()) {
-                    if (hasCloud) {
-                        const useLocal = confirm('このGoogleアカウントには既存のクラウドセーブがあります。\n\n「OK」= 今の端末のやり込みデータをクラウドへ保存して上書き\n「キャンセル」= クラウドデータを端末へ読み込み');
-                        if (useLocal) await saveGameToCloud(true);
-                        else await loadGameFromCloud(true);
-                    } else {
-                        await saveGameToCloud(true);
-                    }
-                } else {
-                    const loaded = await loadGameFromCloud(true);
-                    if (!loaded) setFirebaseStatus('クラウドセーブがないため新規セーブとして開始します', 'normal');
-                }
-            } catch (e) {
-                console.error('Google sign-in failed:', e);
-                setFirebaseStatus(`Google連携に失敗しました: ${e.code || e.message || 'unknown error'}`, 'error');
-            }
-        };
-
-        window.firebaseCloudSave = async function() {
-            await saveGameToCloud(true);
-        };
-
-        window.firebaseCloudLoad = async function() {
-            if (!firebaseUser) {
-                setFirebaseStatus('先にGoogleアカウントを連携してください', 'error');
-                return;
-            }
-            if (!confirm('現在の端末のセーブをクラウドデータで上書きします。よろしいですか？')) return;
-            await loadGameFromCloud(true);
-            if (typeof window.updateHomeDisplay === 'function') window.updateHomeDisplay();
-        };
-
-        window.firebaseGoogleSignOut = async function() {
-            if (!firebaseAuth || !firebaseUser) {
-                setFirebaseStatus('現在、Google連携されていません', 'normal');
-                return;
-            }
-            const name = firebaseUser.displayName || 'Googleアカウント';
-            if (!confirm(`${name}とのGoogle連携をこのゲームから解除します。\n\nクラウド上のセーブデータは削除されません。\nこの端末のローカルセーブも削除されません。\n\n連携を解除しますか？`)) return;
-            try {
-                await signOut(firebaseAuth);
-                setFirebaseAccountStatus('未連携', 'normal');
-                setFirebaseStatus('Google連携を解除しました。ローカルセーブはそのまま残っています', 'ok');
-            } catch (e) {
-                console.error('Google sign-out failed:', e);
-                setFirebaseStatus(`Google連携の解除に失敗しました: ${e.code || e.message || 'unknown error'}`, 'error');
-            }
-        };
-
-        function scheduleCloudSave() {
-            if (!firebaseUser || !firebaseReady) return;
-            clearTimeout(cloudSaveTimer);
-            cloudSaveTimer = setTimeout(() => saveGameToCloud(false), 1200);
-        }
-
-        // 既存のlocalStorage保存を壊さず、Google連携中だけクラウド保存も行います。
-        const originalSaveData = window.saveData;
-        window.saveData = function() {
-            if (typeof originalSaveData === 'function') originalSaveData();
-            scheduleCloudSave();
-        };
-
-        try {
-            if (FIREBASE_ENABLED && firebaseConfig.apiKey !== 'YOUR_API_KEY' && firebaseConfig.projectId !== 'YOUR_PROJECT_ID') {
-                firebaseApp = initializeApp(firebaseConfig);
-                firebaseAuth = getAuth(firebaseApp);
-                firebaseDb = getFirestore(firebaseApp);
-                firebaseReady = true;
-
-                onAuthStateChanged(firebaseAuth, async (user) => {
-                    firebaseUser = user || null;
-                    if (user) {
-                        setFirebaseAccountStatus(`${user.displayName || 'Googleアカウント'} と連携中`, 'ok');
-                        // 別端末など、ローカルセーブが無い場合だけ自動でクラウドから復元。
-                        if (!hasLocalGameSave()) await loadGameFromCloud(false);
-                    } else {
-                        setFirebaseAccountStatus('未連携', 'normal');
-                        setFirebaseStatus('ローカル保存はこれまで通り利用できます', 'normal');
-                    }
-                });
-            } else {
-                setFirebaseAccountStatus('未設定（Firebase Consoleの設定が必要）', 'normal');
-            }
-        } catch (e) {
-            console.error('Firebase initialization failed:', e);
-            setFirebaseAccountStatus('Firebase設定エラー', 'error');
-            setFirebaseStatus('Firebaseの設定値を確認してください', 'error');
-        }
-    </script>
-</body>
-</html>
+                    // playerData全体を保存するため、クエスト・塔を含む進行状況も保存されます。
+                    gameData,
+                    // 重要な進行状況は確認しやすい形でも保存しておく。
+                    progress: {
+                        clearedQuests: Array.isArray(gameData.clearedQuests) ? gameData.clearedQuests : [],
+                        clearedTowerFloors: Array.isArray(gameData.clearedTowerFloors) ? gameData.clearedTowerFloors : [],
+                        tower2ClearedFloors: Array.isArray(gameData.tower2ClearedFloors)
